@@ -6,6 +6,10 @@ By leveraging bulk local scanning, the **Google GenAI SDK (Gemini 3.5 Flash)** f
 
 ---
 
+![EPSCAN Project Workflow Diagram](./workflow_diagram.jpg)
+
+---
+
 ## 📈 Key Efficiency Metrics
 
 This workflow was built to optimize throughput, reduce labor overhead, and scale operations:
