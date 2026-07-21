@@ -27,7 +27,7 @@ This project processes scanned vintage photographs (front and back pairs) using 
 
 ### 2. eBay Inventory API Listing Workflow
 - **Goal**: Upload photo data directly to the eBay website using the eBay Sell Inventory API.
-- **Detailed Structure**: Refer to [EBAY_INVENTORY_API.md](file:///Users/agustinbjr/Ebay/EBAY_INVENTORY_API.md) for endpoint details and JSON payload configurations.
+- **Detailed Structure**: Refer to [EBAY_INVENTORY_API.md](EBAY_INVENTORY_API.md) for endpoint details and JSON payload configurations.
   - Also refer to https://developer.ebay.com/api-docs/sell/inventory/overview.html and https://developer.ebay.com/api-docs/commerce/media/overview.html for more information on the eBay Sell Inventory API and the eBay Media API when needed
 - **Mapping Logic**:
   - Condition: Maps to string enums like `USED_VERY_GOOD`.
@@ -58,8 +58,7 @@ If you are developing custom autonomous agents (using the Google Antigravity SDK
    ```
 3. Load the skill path into your agent configuration:
    ```python
-   config = LocalAgentConfig(
-       skills_paths=["/Users/agustinbjr/Ebay/skills"]
-   )
+    config = LocalAgentConfig(
+        skills_paths=["./skills"]
+    )
    ```
-

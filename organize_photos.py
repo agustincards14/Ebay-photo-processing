@@ -6,7 +6,7 @@ into a subfolder named after the front image.
 
 Usage:
 - python organize_photos.py /path/to/photo-directory
-- If no directory is provided, the script defaults to /Users/agustinbjr/Ebay/test.
+- If no directory is provided, the script defaults to the test directory in the script's folder.
 """
 
 import sys
@@ -54,5 +54,6 @@ def organize_photos(directory_path: str):
             print(f"  Moved {back_path.name} -> {new_back_path.relative_to(dir_path)}")
 
 if __name__ == "__main__":
-    directory = sys.argv[1] if len(sys.argv) > 1 else "/Users/agustinbjr/Ebay/test"
+    script_dir = Path(__file__).parent.resolve()
+    directory = sys.argv[1] if len(sys.argv) > 1 else str(script_dir / "test")
     organize_photos(directory)

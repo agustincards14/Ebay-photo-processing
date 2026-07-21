@@ -194,11 +194,12 @@ if __name__ == "__main__":
             "or checking against official eBay themes."
         )
     )
+    script_dir = Path(__file__).parent.resolve()
     parser.add_argument(
         "directory",
         nargs="?",
-        default="/Users/agustinbjr/Ebay/EPSCAN",
-        help="Path to the EPSCAN directory containing item subfolders (defaults to /Users/agustinbjr/Ebay/EPSCAN)",
+        default=str(script_dir / "EPSCAN"),
+        help="Path to the EPSCAN directory containing item subfolders (defaults to EPSCAN)",
     )
     args = parser.parse_args()
 

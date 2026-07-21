@@ -8,7 +8,7 @@ If a metadata.json contains a 'themes' field, the script:
 
 Usage:
 - python migrate_themes.py [/path/to/directory]
-- If no directory is provided, it defaults to /Users/agustinbjr/Ebay/EPSCAN.
+- If no directory is provided, it defaults to the EPSCAN directory in the script's folder.
 """
 
 import sys
@@ -101,11 +101,12 @@ def migrate_all(directory_path: str):
     print("[*] Migration completed.")
 
 if __name__ == "__main__":
+    script_dir = Path(__file__).parent.resolve()
     parser = argparse.ArgumentParser(description="Migrate themes from metadata.json to inventory_item.json.")
     parser.add_argument(
         "directory",
         nargs="?",
-        default="/Users/agustinbjr/Ebay/EPSCAN",
+        default=str(script_dir / "EPSCAN"),
         help="Directory containing the photo folders (defaults to EPSCAN)",
     )
     args = parser.parse_args()
