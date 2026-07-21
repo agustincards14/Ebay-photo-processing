@@ -1,0 +1,110 @@
+{
+    "availability": {
+        "shipToLocationAvailability": {
+            "quantity": 1
+        }
+    },
+    "condition": "USED_EXCELLENT",
+    "conditionDescription": "Vintage photograph. Year: c. 1945. Size: 3.7x4.8in.",
+    "packageWeightAndSize": {
+        "dimensions": {
+            "length": 7.0,
+            "width": 5.0,
+            "height": 0.125,
+            "unit": "INCH"
+        },
+        "packageType": "LETTER",
+        "weight": {
+            "value": 1.0,
+            "unit": "OUNCE"
+        }
+    },
+    "product": {
+        "title": "Woman with Squirrels on Mount Wilson, California, c. 1945",
+        "description": "A vintage black and white photograph of a young woman posing next to a large concrete tree planter on Mount Wilson, California. She is wearing a light-colored dress and holding a black-and-white checkered clutch. On the rim of the planter, two squirrels are visible. A sign posted on the tree trunk reads, 'ON ACCOUNT OF THE LARGE NUMBER OF DEER ON MOUNT WILSON DOGS ARE NOT ALLOWED,' providing a clear geographical and historical context for this tourist snapshot.",
+        "aspects": {
+            "Subject": [
+                "Woman",
+                "Squirrels",
+                "Tree",
+                "Sign",
+                "Mount Wilson",
+                "Checkered purse",
+                "Planter",
+                "Fashion"
+            ],
+            "Year of Production": [
+                "c. 1945"
+            ],
+            "Unit of Sale": [
+                "Single Piece"
+            ],
+            "Size": [
+                "3.7x4.8in"
+            ],
+            "Vintage": [
+                "Yes"
+            ],
+            "Antique": [
+                "No"
+            ],
+            "Signed": [
+                "No"
+            ],
+            "Material": [
+                "Paper"
+            ],
+            "Production Technique": [
+                "Photocopy"
+            ],
+            "Country of Origin": [
+                "United States"
+            ],
+            "Number of Photographs": [
+                "1"
+            ],
+            "Image Orientation": [
+                "Portrait"
+            ],
+            "Image Color": [
+                "Black & White"
+            ],
+            "Type": [
+                "Photograph"
+            ],
+            "Original/Licensed Reprint": [
+                "Original"
+            ],
+            "Style": [
+                "Photojournalism"
+            ],
+            "Features": [
+                "One of a Kind (OOAK)"
+            ],
+            "Framing": [
+                "Unframed"
+            ],
+            "Size Type/Largest Dimension": [
+                "Small (Up to 7\")"
+            ],
+            "Listed By": [
+                "Dealer or Reseller"
+            ],
+            "Year": [
+                "c. 1945"
+            ],
+            "Location": [
+                "Mount Wilson, California"
+            ],
+            "Theme": [
+                "Animals",
+                "People",
+                "Travel"
+            ]
+        },
+        "imageUrls": [
+            "https://example.com/scans/photo_back/photo_back.jpg",
+            "https://example.com/scans/photo_back/photo_front.jpg"
+        ]
+    }
+}
