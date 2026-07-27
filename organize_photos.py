@@ -11,29 +11,38 @@ Usage:
 
 import sys
 import shutil
+import os
 from pathlib import Path
 
-def organize_photos(directory_path: str):
-    dir_path = Path(directory_path)
-    if not dir_path.exists():
-        print(f"Error: Directory '{directory_path}' does not exist.")
-        sys.exit(1)
-        
+def is_organized_dir(path: Path) -> bool:
+    """Check if a directory appears to be an already organized photo folder."""
+    if (path / "metadata.json").exists():
+        return True
+    try:
+        for f in path.iterdir():
+            if f.is_file() and f.suffix.lower() in ('.jpg', '.jpeg'):
+                if f.stem == path.name:
+                    return True
+    except OSError:
+        pass
+    return False
+
+def organize_photos_in_dir(dir_path: Path) -> int:
     # Get all JPG/JPEG files, sort them to ensure correct pairing
     files = sorted([f for f in dir_path.iterdir() if f.is_file() and f.suffix.lower() in ('.jpg', '.jpeg')])
     
     # Check if we have an even number of files
     if len(files) % 2 != 0:
-        print("Warning: Odd number of files found. The last file might not have a pair.")
+        print(f"Warning: Odd number of files found in '{dir_path}'. The last file might not have a pair.")
         
     pairs = []
     for i in range(0, len(files) - 1, 2):
         pairs.append((files[i], files[i+1]))
     
     if not pairs:
-        print("No valid pairs of photos found in the directory.")
-        return
-    
+        return 0
+        
+    print(f"\nOrganizing {len(pairs)} pairs in '{dir_path}':")
     for front_path, back_path in pairs:
         print(f"Organizing pair: {front_path.name} and {back_path.name}")
         
@@ -52,6 +61,49 @@ def organize_photos(directory_path: str):
         if back_path.exists():
             shutil.move(str(back_path), str(new_back_path))
             print(f"  Moved {back_path.name} -> {new_back_path.relative_to(dir_path)}")
+            
+    return len(pairs)
+
+def organize_photos(directory_path: str):
+    dir_path = Path(directory_path)
+    if not dir_path.exists():
+        print(f"Error: Directory '{directory_path}' does not exist.")
+        sys.exit(1)
+        
+    # Check if the root directory itself is already organized
+    if is_organized_dir(dir_path):
+        print(f"Directory '{directory_path}' appears to be already organized. Skipping.")
+        return
+
+    total_pairs_organized = 0
+    skipped_dirs = []
+
+    # Walk the directory tree top-down
+    for root, dirs, files in os.walk(dir_path, topdown=True):
+        current_dir = Path(root)
+        
+        # Identify subdirectories to prune vs keep
+        keep_dirs = []
+        for d in dirs:
+            if d.startswith('.') or d == '__pycache__':
+                continue
+            sub_path = current_dir / d
+            if is_organized_dir(sub_path):
+                skipped_dirs.append(sub_path)
+                print(f"Skipping already organized directory: {sub_path}")
+            else:
+                keep_dirs.append(d)
+                
+        dirs[:] = keep_dirs
+        
+        # Organize photos in the current directory
+        total_pairs_organized += organize_photos_in_dir(current_dir)
+
+    if total_pairs_organized == 0:
+        if skipped_dirs:
+            print(f"\nNo unorganized photo pairs found ({len(skipped_dirs)} subdirectories are already organized).")
+        else:
+            print("No valid pairs of photos found in the directory.")
 
 if __name__ == "__main__":
     script_dir = Path(__file__).parent.resolve()

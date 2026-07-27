@@ -178,4 +178,5 @@ ebay_credentials.json
 
 # Scratch directory
 scratch/
+test/
 

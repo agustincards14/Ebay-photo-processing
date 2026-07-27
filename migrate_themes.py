@@ -38,17 +38,12 @@ def migrate_folder(folder_path: Path):
         print(f"[*] Found themes in metadata for {folder_path.name}")
         
         # 2. Extract themes
+        themes_val = metadata.get("themes") or metadata.get("theme")
         themes_list = []
-        if has_themes:
-            themes_val = metadata["themes"]
-            if isinstance(themes_val, list):
-                themes_list = [str(t) for t in themes_val]
-            elif isinstance(themes_val, str):
-                themes_list = [themes_val]
-        elif has_theme:
-            theme_val = metadata["theme"]
-            if isinstance(theme_val, str):
-                themes_list = [theme_val]
+        if isinstance(themes_val, list):
+            themes_list = [str(t) for t in themes_val]
+        elif isinstance(themes_val, str):
+            themes_list = [themes_val]
                 
         # 3. Copy to inventory_item.json if it exists
         if item_path.exists():

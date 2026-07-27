@@ -5,7 +5,7 @@ import time
 import sys
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode, quote, unquote
-
+from urllib.error import HTTPError, URLError
 
 CONFIG_FILE = "ebay_credentials.json"
 DEFAULT_SCOPE = "https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account"
@@ -23,25 +23,42 @@ ENVIRONMENTS = {
     }
 }
 
+DEFAULT_ENV_STRUCTURE = {
+    "sandbox": {
+        "client_id": "",
+        "client_secret": "",
+        "ru_name": "",
+        "access_token": "",
+        "refresh_token": "",
+        "expires_at": 0
+    },
+    "production": {
+        "client_id": "",
+        "client_secret": "",
+        "ru_name": "",
+        "access_token": "",
+        "refresh_token": "",
+        "expires_at": 0
+    }
+}
+
+STORES = ["photo_vault", "personal"]
+
+def normalize_store_name(store_input: str) -> str:
+    if not store_input:
+        return "photo_vault"
+    s = store_input.strip().lower().replace(" ", "_").replace("-", "_")
+    if "personal" in s:
+        return "personal"
+    if "photo" in s or "vault" in s:
+        return "photo_vault"
+    return s
+
 def load_credentials():
-    """Load credentials from the config file if it exists."""
+    """Load credentials from the config file with auto-migration to store-based structure."""
     default_structure = {
-        "sandbox": {
-            "client_id": "",
-            "client_secret": "",
-            "ru_name": "",
-            "access_token": "",
-            "refresh_token": "",
-            "expires_at": 0
-        },
-        "production": {
-            "client_id": "",
-            "client_secret": "",
-            "ru_name": "",
-            "access_token": "",
-            "refresh_token": "",
-            "expires_at": 0
-        }
+        "photo_vault": json.loads(json.dumps(DEFAULT_ENV_STRUCTURE)),
+        "personal": json.loads(json.dumps(DEFAULT_ENV_STRUCTURE))
     }
     
     if os.path.exists(CONFIG_FILE):
@@ -49,35 +66,37 @@ def load_credentials():
             with open(CONFIG_FILE, "r") as f:
                 data = json.load(f)
                 
-            # Migration check: if top-level has client_id, migrate it to "sandbox"
-            if isinstance(data, dict) and "client_id" in data:
-                print("[*] Migrating old flat credentials format to nested environment format...", file=sys.stderr)
-                migrated_data = {
-                    "sandbox": {
-                        "client_id": data.get("client_id", ""),
-                        "client_secret": data.get("client_secret", ""),
-                        "ru_name": data.get("ru_name", ""),
-                        "access_token": data.get("access_token", ""),
-                        "refresh_token": data.get("refresh_token", ""),
-                        "expires_at": data.get("expires_at", 0)
-                    },
-                    "production": {
-                        "client_id": "",
-                        "client_secret": "",
-                        "ru_name": "",
-                        "access_token": "",
-                        "refresh_token": "",
-                        "expires_at": 0
-                    }
-                }
-                save_credentials(migrated_data)
-                return migrated_data
-            
-            # Ensure both keys exist
             if isinstance(data, dict):
-                for env in ["sandbox", "production"]:
-                    if env not in data or not isinstance(data[env], dict):
-                        data[env] = default_structure[env]
+                # Migration check 1: if flat legacy structure
+                if "client_id" in data:
+                    print("[*] Migrating legacy flat credentials to store-based structure ('personal')...", file=sys.stderr)
+                    default_structure["personal"]["sandbox"]["client_id"] = data.get("client_id", "")
+                    default_structure["personal"]["sandbox"]["client_secret"] = data.get("client_secret", "")
+                    default_structure["personal"]["sandbox"]["ru_name"] = data.get("ru_name", "")
+                    default_structure["personal"]["sandbox"]["access_token"] = data.get("access_token", "")
+                    default_structure["personal"]["sandbox"]["refresh_token"] = data.get("refresh_token", "")
+                    default_structure["personal"]["sandbox"]["expires_at"] = data.get("expires_at", 0)
+                    save_credentials(default_structure)
+                    return default_structure
+                
+                # Migration check 2: top-level has "sandbox" or "production" but not "photo_vault" / "personal"
+                if ("sandbox" in data or "production" in data) and not ("photo_vault" in data or "personal" in data):
+                    print("[*] Migrating environment credentials to store-based structure ('personal')...", file=sys.stderr)
+                    if "sandbox" in data and isinstance(data["sandbox"], dict):
+                        default_structure["personal"]["sandbox"].update(data["sandbox"])
+                    if "production" in data and isinstance(data["production"], dict):
+                        default_structure["personal"]["production"].update(data["production"])
+                    save_credentials(default_structure)
+                    return default_structure
+                
+                # Ensure all expected store keys and environment subkeys exist
+                for store in STORES:
+                    if store not in data or not isinstance(data[store], dict):
+                        data[store] = json.loads(json.dumps(DEFAULT_ENV_STRUCTURE))
+                    else:
+                        for env in ["sandbox", "production"]:
+                            if env not in data[store] or not isinstance(data[store][env], dict):
+                                data[store][env] = json.loads(json.dumps(DEFAULT_ENV_STRUCTURE[env]))
                 return data
         except Exception as e:
             print(f"[!] Error loading credentials: {e}", file=sys.stderr)
@@ -89,7 +108,6 @@ def save_credentials(creds):
     with open(CONFIG_FILE, "w") as f:
         json.dump(creds, f, indent=4)
     print(f"\n[+] Credentials saved to '{CONFIG_FILE}'.", file=sys.stderr)
-
 
 def get_auth_url(client_id, ru_name, env="sandbox", scope=DEFAULT_SCOPE):
     """Generate the user authorization URL for the specified environment."""
@@ -107,7 +125,6 @@ def exchange_code_for_token(client_id, client_secret, ru_name, auth_code, env="s
     """Exchange the authorization code for access and refresh tokens."""
     url = ENVIRONMENTS.get(env, ENVIRONMENTS["sandbox"])["token_url"]
     
-    # eBay requires basic auth for client credentials
     auth_str = f"{client_id}:{client_secret}"
     b64_auth = base64.b64encode(auth_str.encode("utf-8")).decode("utf-8")
     
@@ -128,15 +145,19 @@ def exchange_code_for_token(client_id, client_secret, ru_name, auth_code, env="s
         with urlopen(req) as response:
             res_data = json.loads(response.read().decode("utf-8"))
             return res_data
-    except Exception as e:
+    except HTTPError as e:
         print(f"\n[!] Error exchanging authorization code ({env}): {e}", file=sys.stderr)
-        # Try to read error body if available
-        if hasattr(e, 'read'):
-            try:
-                err_body = e.read().decode("utf-8")
-                print(f"Server response: {err_body}", file=sys.stderr)
-            except Exception:
-                pass
+        try:
+            err_body = e.read().decode("utf-8")
+            print(f"Server response: {err_body}", file=sys.stderr)
+        except Exception:
+            pass
+        return None
+    except URLError as e:
+        print(f"\n[!] Network error exchanging authorization code ({env}): {e}", file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"\n[!] Unexpected error exchanging authorization code ({env}): {e}", file=sys.stderr)
         return None
 
 def refresh_access_token(client_id, client_secret, refresh_token, env="sandbox", scope=None):
@@ -158,75 +179,94 @@ def refresh_access_token(client_id, client_secret, refresh_token, env="sandbox",
     if scope:
         data["scope"] = scope
     encoded_data = urlencode(data).encode("utf-8")
-
     
     req = Request(url, data=encoded_data, headers=headers, method="POST")
     try:
         with urlopen(req) as response:
             res_data = json.loads(response.read().decode("utf-8"))
             return res_data
-    except Exception as e:
+    except HTTPError as e:
         print(f"\n[!] Error refreshing access token ({env}): {e}", file=sys.stderr)
-        if hasattr(e, 'read'):
-            try:
-                err_body = e.read().decode("utf-8")
-                print(f"Server response: {err_body}", file=sys.stderr)
-            except Exception:
-                pass
+        try:
+            err_body = e.read().decode("utf-8")
+            print(f"Server response: {err_body}", file=sys.stderr)
+        except Exception:
+            pass
+        return None
+    except URLError as e:
+        print(f"\n[!] Network error refreshing access token ({env}): {e}", file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"\n[!] Unexpected error refreshing access token ({env}): {e}", file=sys.stderr)
         return None
 
-def check_and_get_token(env=None):
-    """Helper function to load token and refresh it if expired for the specified environment."""
+def check_and_get_token(store=None, env=None):
+    """Helper function to load token and refresh it if expired for specified store and environment."""
+    if store is None:
+        store = os.environ.get("EBAY_STORE", "photo_vault")
+    store = normalize_store_name(store)
+    
     if env is None:
         env = os.environ.get("EBAY_ENV", "sandbox").lower()
         if env not in ENVIRONMENTS:
             env = "sandbox"
             
     creds_dict = load_credentials()
-    creds = creds_dict.get(env, {})
+    store_creds = creds_dict.get(store, {})
+    creds = store_creds.get(env, {})
     
     if not creds or not creds.get("client_id"):
-        print(f"[-] No credentials found for environment '{env}'. Run 'python ebay_oauth_helper.py --env {env}' to authenticate first.", file=sys.stderr)
+        print(f"[-] No credentials found for store '{store}' ({env}). Run 'python ebay_oauth_helper.py --store {store} --env {env}' to authenticate first.", file=sys.stderr)
         return None
         
-    # Check if access token is expired (using a safety buffer of 5 minutes)
     expires_at = creds.get("expires_at", 0)
     current_time = time.time()
     
     if current_time + 300 < expires_at:
         return creds.get("access_token")
         
-    print(f"[*] Access token for '{env}' expired or expiring soon. Refreshing...", file=sys.stderr)
+    print(f"[*] Access token for store '{store}' ({env}) expired or expiring soon. Refreshing...", file=sys.stderr)
     
     client_id = creds.get("client_id")
     client_secret = creds.get("client_secret")
     refresh_token = creds.get("refresh_token")
     
     if not (client_id and client_secret and refresh_token):
-        print(f"[-] Missing credentials required for token refresh on environment '{env}'. Re-authenticate.", file=sys.stderr)
+        print(f"[-] Missing credentials required for token refresh on store '{store}' ({env}). Re-authenticate.", file=sys.stderr)
         return None
         
     res = refresh_access_token(client_id, client_secret, refresh_token, env=env)
     if res:
         creds["access_token"] = res["access_token"]
         creds["expires_at"] = time.time() + int(res["expires_in"])
-        creds_dict[env] = creds
+        creds_dict[store][env] = creds
         save_credentials(creds_dict)
-        print(f"[+] Access token for '{env}' successfully refreshed!", file=sys.stderr)
+        print(f"[+] Access token for store '{store}' ({env}) successfully refreshed!", file=sys.stderr)
         return creds["access_token"]
     else:
-        print(f"[-] Failed to refresh token for environment '{env}'.", file=sys.stderr)
+        print(f"[-] Failed to refresh token for store '{store}' ({env}).", file=sys.stderr)
         return None
 
-def interactive_login(env=None):
+def interactive_login(store=None, env=None):
     print("=" * 60)
     print("            eBay API Authorization Code Flow Helper")
     print("=" * 60)
     
     creds_dict = load_credentials()
     
+    if store is None:
+        print("\nSelect eBay Store Account:")
+        print("1. Photo Vault (Default)")
+        print("2. Personal")
+        choice = input("Enter choice [1]: ").strip()
+        if choice == "2":
+            store = "personal"
+        else:
+            store = "photo_vault"
+    store = normalize_store_name(store)
+    
     if env is None:
-        print("Select the environment:")
+        print("\nSelect Environment:")
         print("1. Sandbox (SBX)")
         print("2. Production (PRD)")
         choice = input("Enter choice [1]: ").strip()
@@ -235,9 +275,10 @@ def interactive_login(env=None):
         else:
             env = "sandbox"
             
-    print(f"\n---> Running authentication for environment: {env.upper()} <---\n")
+    print(f"\n---> Running authentication for Store: {store.upper()} | Environment: {env.upper()} <---\n")
     
-    creds = creds_dict.get(env, {})
+    store_creds = creds_dict.get(store, {})
+    creds = store_creds.get(env, {})
     
     client_id = input(f"Enter App ID (Client ID) [{creds.get('client_id', '')}]: ").strip() or creds.get('client_id', '')
     client_secret = input(f"Enter Cert ID (Client Secret) [{creds.get('client_secret', '')}]: ").strip() or creds.get('client_secret', '')
@@ -247,7 +288,6 @@ def interactive_login(env=None):
         print("[!] Client ID, Client Secret, and RuName are required.")
         return
 
-    # Keep credentials draft
     creds_draft = {
         "client_id": client_id,
         "client_secret": client_secret,
@@ -264,8 +304,8 @@ def interactive_login(env=None):
         print("1. Open the following URL in your browser and sign in using your")
         print("   eBay Sandbox Test User credentials (e.g. TESTUSER_xxxx):")
     else:
-        print("1. Open the following URL in your browser and sign in using your")
-        print("   production eBay Seller Account credentials:")
+        print(f"1. Open the following URL in your browser and sign in using your")
+        print(f"   {store.upper()} production eBay Seller Account credentials:")
     print("-" * 50)
     print(auth_url)
     print("-" * 50)
@@ -278,7 +318,6 @@ def interactive_login(env=None):
         print("[!] Input cannot be empty.")
         return
         
-    # Extract code parameter if they pasted the whole URL
     code = redirect_input
     if "code=" in redirect_input:
         try:
@@ -287,10 +326,9 @@ def interactive_login(env=None):
         except Exception:
             pass
             
-    # Decode the authorization code to prevent double-URL-encoding
     code = unquote(code)
             
-    print(f"\n[*] Exchanging authorization code for {env.upper()} User Access Token...")
+    print(f"\n[*] Exchanging authorization code for store '{store}' ({env.upper()}) User Access Token...")
     res = exchange_code_for_token(client_id, client_secret, ru_name, code, env=env)
     
     if res:
@@ -298,21 +336,22 @@ def interactive_login(env=None):
         creds_draft["refresh_token"] = res["refresh_token"]
         creds_draft["expires_at"] = time.time() + int(res["expires_in"])
         
-        creds_dict[env] = creds_draft
+        if store not in creds_dict:
+            creds_dict[store] = json.loads(json.dumps(DEFAULT_ENV_STRUCTURE))
+        creds_dict[store][env] = creds_draft
         save_credentials(creds_dict)
         
-        print(f"\n[+] SUCCESS! Token retrieved successfully for {env.upper()}.")
+        print(f"\n[+] SUCCESS! Token retrieved successfully for store '{store}' ({env.upper()}).")
         print(f"    Access Token (Expires in {res['expires_in']}s): {res['access_token'][:30]}...")
         print(f"    Refresh Token: {res['refresh_token'][:30]}...")
     else:
-        print("\n[-] FAILED to retrieve tokens. Check credentials and retry.")
+        print(f"\n[-] FAILED to retrieve tokens for store '{store}'. Check credentials and retry.")
 
 if __name__ == "__main__":
-    # Parse arguments
     get_token_mode = False
     env = None
+    store = None
     
-    # Process sys.argv
     args = sys.argv[1:]
     i = 0
     while i < len(args):
@@ -326,6 +365,13 @@ if __name__ == "__main__":
             else:
                 print("[-] Error: --env / -e option requires an argument.", file=sys.stderr)
                 sys.exit(1)
+        elif arg in ("--store", "-s"):
+            if i + 1 < len(args):
+                store = args[i+1].lower()
+                i += 1
+            else:
+                print("[-] Error: --store / -s option requires an argument.", file=sys.stderr)
+                sys.exit(1)
         i += 1
         
     if env and env not in ENVIRONMENTS:
@@ -333,15 +379,17 @@ if __name__ == "__main__":
         sys.exit(1)
         
     if get_token_mode:
+        if not store:
+            store = os.environ.get("EBAY_STORE", "photo_vault")
         if not env:
             env = os.environ.get("EBAY_ENV", "sandbox").lower()
             if env not in ENVIRONMENTS:
                 env = "sandbox"
-        token = check_and_get_token(env=env)
+        token = check_and_get_token(store=store, env=env)
         if token:
             print(token)
             sys.exit(0)
         else:
             sys.exit(1)
     else:
-        interactive_login(env=env)
+        interactive_login(store=store, env=env)

@@ -1,11 +1,11 @@
 # Cheap Photos ($5.00 or less)
 
-This document lists all folders under [EPSCAN/cheap_photos](./EPSCAN/cheap_photos/cheap_photos) containing photos with an estimated price of $5.00 or less.
+This document lists all folders under [EPSCAN/cheap_photos](./EPSCAN/cheap_photos) containing photos with an estimated price of $5.00 or less.
 
 Total matching photos: 97
 
-| Folder                                                                         | Title                                                              | Price |
-| :----------------------------------------------------------------------------- | :----------------------------------------------------------------- | :---- |
+| Folder                                             | Title                                                              | Price |
+| :------------------------------------------------- | :----------------------------------------------------------------- | :---- |
 | [ 215456_0167 ](./EPSCAN/cheap_photos/215456_0167) | Blurry Indoor Portrait of a Man, circa 1960s                       | $1    |
 | [ 215308_0053 ](./EPSCAN/cheap_photos/215308_0053) | Hiker in a Sun-Drenched Forest, 1971                               | $2    |
 | [ 215710_0245 ](./EPSCAN/cheap_photos/215710_0245) | Blurry Snapshot of a Suburban Home and Yard, c. 1960s              | $2    |

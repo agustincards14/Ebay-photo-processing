@@ -27,9 +27,18 @@ from google.genai import types
 # pyrefly: ignore [missing-import]
 from PIL import Image
 
-# Initialize the Gemini client
-# Requires GEMINI_API_KEY environment variable to be set
-client = genai.Client()
+# Global client initialized lazily
+_client = None
+
+def get_client():
+    global _client
+    if _client is None:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            print("Error: GEMINI_API_KEY environment variable is not set.")
+            sys.exit(1)
+        _client = genai.Client(api_key=api_key)
+    return _client
 
 # Official eBay themes for category 262421
 EBAY_THEMES = [
@@ -54,13 +63,16 @@ def build_ebay_safe_sku(folder_name: str) -> str:
 
 class PhotoMetadata(BaseModel):
     title: str = Field(description="Title of the photo. It should clearly capture the essence of the photo's content, and include the year and location if possible (e.g., 'Family Picnic in Central Park, 1955').")
-    year: str = Field(description="Year the photo was taken (estimated if unknown).")
+    year: str = Field(description="Exact year the photo was taken (estimated if unknown).")
     subjects: list[str] = Field(description="Subjects describing the photo.")
     themes: list[str] = Field(description="List of 1 to 3 relevant themes selected from the allowed list, ordered by relevance.")
     location: str = Field(description="Location where the photo was taken (estimated or general location/city).")
+    image_color: str = Field(description="Color style: 'Black & White', 'Sepia', 'Color', 'Cyanotype', or 'Monochrome'.")
+    photo_type: str = Field(description="Physical format: 'Snapshot', 'Real Photo Postcard (RPPC)', 'Cabinet Card', 'Photograph', 'Stereoview', 'Tintype', 'Slide'.")
+    back_text_transcription: str = Field(description="Verbatim transcription of any handwritten notes, stamps, typewriter text, or annotations on the back. Leave empty string if none.")
     description: str = Field(description="Detailed description including the setting and any cultural or political anchors of that time.")
     size: str = Field(description="The physical size of the photo in inches (e.g., '2.5x3.5in').")
-    price: str = Field(description="Estimated price of the photo based on its content, condition, and market trends. It should be a single value, not a range, and should be expressed in USD (e.g., '$15').")
+    price: str = Field(description="Estimated price of the photo based on its content, condition, and market trends. It should be a single value, not a range, and should be expressed in USD (e.g., '$11').")
 
 def identify_front_back(image_paths: list[Path]) -> tuple[Path, Path]:
     if len(image_paths) != 2:
@@ -88,59 +100,66 @@ def identify_front_back(image_paths: list[Path]) -> tuple[Path, Path]:
     sorted_paths = sorted(image_paths)
     return sorted_paths[0], sorted_paths[1]
 
-def generate_metadata(folder_path: str):
-    subfolder_path = Path(folder_path).resolve()
-    if not subfolder_path.exists() or not subfolder_path.is_dir():
-        print(f"Error: The path '{folder_path}' is not a valid directory.")
-        sys.exit(1)
-        
-    # Get all JPG/JPEG files inside the directory
+def process_single_folder(subfolder_path: Path, force: bool = False) -> bool:
+    """Processes a single directory containing exactly 2 images (front and back)."""
+    metadata_file_path = subfolder_path / "metadata.json"
+    if metadata_file_path.exists() and not force:
+        print(f"[*] Skipping {subfolder_path.name}: metadata.json already exists (use --force to regenerate).")
+        return True
+
     images = [f for f in subfolder_path.iterdir() if f.is_file() and f.suffix.lower() in ('.jpg', '.jpeg')]
-    
     if len(images) != 2:
-        print(f"Error: Expected exactly 2 images (front and back) in '{subfolder_path}', but found {len(images)}.")
-        sys.exit(1)
-        
+        print(f"[-] Skipping {subfolder_path.name}: Expected 2 images, found {len(images)}.")
+        return False
+
     try:
         front_path, back_path = identify_front_back(images)
     except Exception as e:
-        print(f"Error identifying front/back: {e}")
-        sys.exit(1)
-        
-    print(f"Processing folder: {subfolder_path.name}")
+        print(f"[-] Error identifying front/back in {subfolder_path.name}: {e}")
+        return False
+
+    print(f"\nProcessing folder: {subfolder_path.name}")
     print(f"  Front photo: {front_path.name}")
     print(f"  Back photo:  {back_path.name}")
-    
-    # Get dimensions from the front photo
-    with Image.open(front_path) as img:
-        width_px, height_px = img.size
-        
-    # Calculate size in inches assuming 300dpi
+
+    try:
+        with Image.open(front_path) as img:
+            width_px, height_px = img.size
+    except Exception as e:
+        print(f"[-] Error opening image {front_path.name}: {e}")
+        return False
+
     dpi = 300
     width_in = width_px / dpi
     height_in = height_px / dpi
     size_str = f"{width_in:.1f}x{height_in:.1f}in"
-    
-    # Open both images for Gemini
-    front_img = Image.open(front_path)
-    back_img = Image.open(back_path)
-    
+
+    try:
+        front_img = Image.open(front_path)
+        back_img = Image.open(back_path)
+    except Exception as e:
+        print(f"[-] Error loading images for {subfolder_path.name}: {e}")
+        return False
+
     prompt = (
         "Analyze these two sides of a scanned photograph (front and back). "
         "Please extract and synthesize metadata about this photo. "
-        "Provide a descriptive title, estimated year, a list of subjects, estimated location, "
-        "a detailed description including the setting and any cultural or political anchors of that time, "
-        "and estimated price based on the content and condition of the photo. "
+        "Things like the year, decade, a list of subjects, estimated location, image_color, photo_type, etc."
+        "Provide a title strictly under 80 characters including key search terms (decade, subject, photo type, color, location). Make sure to prioritize the subject of the photo, then append attributes and keywords after a comma. "
+        "a verbatim transcription of any handwritten notes, stamps, or text on the back in 'back_text_transcription' (or empty string if none), "
+        "a detailed description including the setting, any cultural or political anchors of that time, "
+        "and estimated price based on content and market trends (e.g. '$12'). Photos that are blurry or have generic subjects should be priced lower relative to clear photos and portrait photos of people."
+        # "The price value should be clamped to a value between 8 and 14."
         "Also select 1 to 3 relevant themes from the allowed list: " + ", ".join(EBAY_THEMES) + ". "
-        "If handwriting or stamps are on the back, use them to inform your metadata. "
         f"The physical size of the photo has been calculated as {size_str}. Include this exactly in the 'size' field."
     )
-    
-    print(f"Requesting metadata from Gemini (gemini-3.5-flash) for {subfolder_path.name}...")
-    
+
+    print(f"Requesting metadata from Gemini (gemini-3.6-flash) for {subfolder_path.name}...")
+    client = get_client()
+
     try:
         response = client.models.generate_content(
-            model='gemini-3.5-flash',
+            model='gemini-3.6-flash',
             contents=[prompt, front_img, back_img],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -148,28 +167,65 @@ def generate_metadata(folder_path: str):
                 temperature=0.4,
             ),
         )
-        
+
         metadata = response.text
         if metadata is None:
             raise ValueError("Received an empty response from Gemini.")
-        
-        # Write metadata to json file
-        metadata_file_path = subfolder_path / "metadata.json"
+
+        json_obj = json.loads(metadata)
+        json_obj["sku"] = build_ebay_safe_sku(subfolder_path.name)
         with open(metadata_file_path, "w") as f:
-            # Format it nicely
-            json_obj = json.loads(metadata)
-            json_obj["sku"] = build_ebay_safe_sku(subfolder_path.name)
             json.dump(json_obj, f, indent=4)
-            
-        print(f"Successfully wrote metadata to {metadata_file_path.relative_to(subfolder_path.parent.parent if subfolder_path.parent.parent.exists() else subfolder_path.parent)}\n")
-        
+
+        print(f"[+] Successfully wrote metadata to {metadata_file_path.name}")
+        return True
+
     except Exception as e:
-        print(f"Error processing {subfolder_path.name}: {e}\n")
+        print(f"[-] Error processing {subfolder_path.name}: {e}")
+        return False
+
+def generate_metadata(folder_path: str, force: bool = False):
+    subfolder_path = Path(folder_path).resolve()
+    if not subfolder_path.exists() or not subfolder_path.is_dir():
+        print(f"Error: The path '{folder_path}' is not a valid directory.")
         sys.exit(1)
+
+    # 1. Direct check: if target directory itself contains exactly 2 images
+    direct_images = [f for f in subfolder_path.iterdir() if f.is_file() and f.suffix.lower() in ('.jpg', '.jpeg')]
+    if len(direct_images) == 2:
+        process_single_folder(subfolder_path, force=force)
+        return
+
+    # 2. Recursive check: scan all child directories for folders containing 2 images
+    print(f"[*] Target '{subfolder_path.name}' does not contain 2 images directly. Recursively scanning child directories...")
+    
+    candidate_folders = []
+    for root, dirs, files in os.walk(subfolder_path):
+        root_path = Path(root)
+        if root_path.name.startswith(".") or root_path.name == "cheap_photos":
+            continue
+        jpg_files = [f for f in files if Path(f).suffix.lower() in ('.jpg', '.jpeg')]
+        if len(jpg_files) == 2:
+            candidate_folders.append(root_path)
+
+    candidate_folders = sorted(candidate_folders)
+
+    if not candidate_folders:
+        print(f"[-] No child directories containing 2 images were found under '{subfolder_path}'.")
+        return
+
+    print(f"[*] Found {len(candidate_folders)} photo folder(s) to process.")
+    processed_count = 0
+    for folder in candidate_folders:
+        if process_single_folder(folder, force=force):
+            processed_count += 1
+
+    print(f"\n[*] Batch metadata generation complete for '{subfolder_path.name}'. Processed {processed_count}/{len(candidate_folders)} folders.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate metadata for organized photos using Gemini.")
-    parser.add_argument("directory", help="Path to the directory containing both front and back photos")
+    parser.add_argument("directory", help="Path to directory containing photo pair or parent directory")
+    parser.add_argument("--force", "-f", action="store_true", help="Force regeneration of metadata even if metadata.json already exists")
     args = parser.parse_args()
     
-    generate_metadata(args.directory)
+    generate_metadata(args.directory, force=args.force)
