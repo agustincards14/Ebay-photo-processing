@@ -170,13 +170,23 @@ commerce_media_v1_beta_oas3.json
 sell_inventory_v1_oas3.json
 listing_log.md
 
-# EPSCAN directories
-*EPSCAN*/
+# EPSCAN photo files (ignore JPEGs inside EPSCAN, keep JSON metadata)
+EPSCAN/
+EPSCAN_TEST/
+*EPSCAN*/**/*.jpg
+*EPSCAN*/**/*.JPG
+*EPSCAN*/**/*.jpeg
+*EPSCAN*/**/*.JPEG
 
 # eBay credentials
 ebay_credentials.json
 
+# Generated eBay payload files
+inventory_item.json
+**/inventory_item.json
+offer.json
+**/offer.json
+
 # Scratch directory
 scratch/
 test/
-

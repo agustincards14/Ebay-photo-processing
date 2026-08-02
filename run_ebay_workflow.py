@@ -33,6 +33,10 @@ DEFAULT_BUSINESS_POLICIES: dict[str, Any] = {
     "paymentPolicyId": "251347757026"
 }
 
+def build_ebay_safe_sku(folder_name: str) -> str:
+    """Generates an eBay-safe SKU matching the parent folder name (preserving hyphens and underscores)."""
+    return re.sub(r"[^A-Za-z0-9_\-]", "", folder_name)[:50]
+
 def is_valid_ebay_image(url: str) -> bool:
     """Checks if an eBay image URL is valid and non-placeholder (size > 5000 bytes)."""
     if not url or not url.startswith("https://") or "example.com" in url:
@@ -108,7 +112,7 @@ def build_inventory_item_payload(folder_path: Path, meta: dict, image_urls: list
     desc = meta.get("description", "")
     back_ocr = meta.get("back_text_transcription")
     if back_ocr:
-        desc += f"\n\nBack of Photo Note / Transcription:\n\"{back_ocr}\""
+        desc += f" Back of Photo Note:\"{back_ocr}\""
 
     subjects = meta.get("subjects") or meta.get("subject") or []
     if not isinstance(subjects, list):
@@ -229,8 +233,8 @@ def fetch_business_policies(access_token: str, api_host: str, store: str) -> dic
 
     return policies
 
-def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[str, Any], auto_accept_pct: float = 80.0) -> dict:
-    """Builds the offer payload using metadata, store-specific business policies, and best offer terms."""
+def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[str, Any], auto_accept_pct: float = 80.0, auto_decline_pct: float = 50.0) -> dict:
+    """Builds the offer payload using metadata, store-specific business policies, and best offer terms (auto-accept & auto-decline)."""
     sku = meta.get("sku", folder_path.name)
     price_str = str(meta.get("price", "10")).replace('$', '').replace(',', '').strip()
     try:
@@ -243,11 +247,18 @@ def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[s
     auto_accept_num = round(price_num * (auto_accept_pct / 100.0), 2)
     auto_accept_val = f"{auto_accept_num:.2f}"
 
+    auto_decline_num = round(price_num * (auto_decline_pct / 100.0), 2)
+    auto_decline_val = f"{auto_decline_num:.2f}"
+
     listing_policies: dict[str, Any] = dict(business_policies)
     listing_policies["bestOfferTerms"] = {
         "bestOfferEnabled": True,
         "autoAcceptPrice": {
             "value": auto_accept_val,
+            "currency": "USD"
+        },
+        "autoDeclinePrice": {
+            "value": auto_decline_val,
             "currency": "USD"
         }
     }
@@ -268,7 +279,7 @@ def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[s
     }
     return offer_data
 
-def process_single_item(folder_path: Path, access_token: str, api_host: str, media_api_host: str, business_policies: dict[str, Any], auto_accept_pct: float = 80.0) -> dict:
+def process_single_item(folder_path: Path, access_token: str, api_host: str, media_api_host: str, business_policies: dict[str, Any], auto_accept_pct: float = 80.0, auto_decline_pct: float = 60.0) -> dict:
     """Executes the full pipeline for a single photo item folder with atomic state updates."""
     print(f"\n--- Processing Item: {folder_path.name} ---")
     stats = {"success": False}
@@ -281,7 +292,15 @@ def process_single_item(folder_path: Path, access_token: str, api_host: str, med
     with open(metadata_path, "r") as f:
         meta = json.load(f)
 
-    sku = meta.get("sku", folder_path.name)
+    sku = meta.get("sku")
+    expected_sku = build_ebay_safe_sku(folder_path.name)
+    if not meta.get("ebay_inventory_created") and sku != expected_sku:
+        sku = expected_sku
+        meta["sku"] = sku
+        with open(metadata_path, "w") as f:
+            json.dump(meta, f, indent=4)
+    elif not sku:
+        sku = expected_sku
     image_files = sorted([
         f for f in folder_path.iterdir()
         if f.is_file() and f.suffix.lower() in (".jpg", ".jpeg")
@@ -343,12 +362,12 @@ def process_single_item(folder_path: Path, access_token: str, api_host: str, med
 
     # Step 3: Create Local offer.json (with Best Offer) & Create Offer on eBay
     offer_json_path = folder_path / "offer.json"
-    offer_payload = build_offer_payload(folder_path, meta, business_policies=business_policies, auto_accept_pct=auto_accept_pct)
+    offer_payload = build_offer_payload(folder_path, meta, business_policies=business_policies, auto_accept_pct=auto_accept_pct, auto_decline_pct=auto_decline_pct)
     with open(offer_json_path, "w") as f:
         json.dump(offer_payload, f, indent=4)
 
     if not meta.get("ebay_offer_created"):
-        print(f" -> Step 3: Creating Offer on eBay with Best Offer enabled ({auto_accept_pct}% auto-accept)...")
+        print(f" -> Step 3: Creating Offer on eBay with Best Offer enabled ({auto_accept_pct}% auto-accept / {auto_decline_pct}% auto-decline)...")
         post_url = f"{api_host}/sell/inventory/v1/offer"
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -380,6 +399,24 @@ def process_single_item(folder_path: Path, access_token: str, api_host: str, med
             "Content-Type": "application/json"
         }
         resp = requests.post(pub_url, headers=headers)
+        
+        # Self-healing retry for transient 500 / 25001 eBay internal backend glitches
+        if resp.status_code == 500 and "25001" in resp.text:
+            print("    [*] Received transient eBay 500 error (25001). Retrying publish in 2 seconds...")
+            import time
+            time.sleep(2)
+            resp = requests.post(pub_url, headers=headers)
+        # Self-healing handler for 25604 (Product not found): Re-sync inventory item on eBay and retry publish
+        elif resp.status_code == 500 and "25604" in resp.text:
+            print("    [*] Received 25604 (Product not found). Re-syncing inventory item on eBay (PUT)...")
+            put_url = f"{api_host}/sell/inventory/v1/inventory_item/{sku}"
+            put_resp = requests.put(put_url, headers=headers, json=inv_payload)
+            if put_resp.status_code in (200, 201, 204):
+                print(f"    [+] Re-synced inventory item for SKU {sku}. Retrying publish...")
+                import time
+                time.sleep(1)
+                resp = requests.post(pub_url, headers=headers)
+
         if resp.status_code == 200:
             res_data = resp.json()
             listing_id = res_data.get("listingId")
@@ -403,41 +440,112 @@ def process_single_item(folder_path: Path, access_token: str, api_host: str, med
     print(f" [SUCCESS] Workflow complete for {folder_path.name}!")
     return stats
 
+def find_epscan_root(path: Path) -> Path:
+    """Finds the root parent directory containing 'EPSCAN' in its name."""
+    curr = path.resolve()
+    epscan_root = None
+    while True:
+        if "EPSCAN" in curr.name.upper():
+            epscan_root = curr
+        if curr.parent == curr:
+            break
+        curr = curr.parent
+    return epscan_root or path.resolve()
+
 def update_markdown_log(target_dir: Path):
-    """Generates an updated markdown listing log."""
-    scan_dir = target_dir.parent if (target_dir / "metadata.json").exists() else target_dir
-    log_path = scan_dir / "listing_log.md"
+    """Generates an updated single markdown listing log at the root EPSCAN directory."""
+    root_dir = find_epscan_root(target_dir)
+    log_path = root_dir / "listing_log.md"
     
-    listed_items = []
-    total_items = 0
+    # Clean up any nested listing_log.md inside cheap_photos or subfolders
+    for nested_log in root_dir.rglob("listing_log.md"):
+        if nested_log.resolve() != log_path.resolve():
+            try:
+                os.remove(nested_log)
+            except Exception:
+                pass
+
+    total_folders = 0
+    meta_generated_count = 0
+    inventory_created_count = 0
+    offer_created_count = 0
+    published_count = 0
     
-    for item in sorted(scan_dir.iterdir()):
-        if item.is_dir() and not item.name.startswith(".") and item.name != "cheap_photos":
-            total_items += 1
-            if (item / "metadata.json").exists():
-                try:
-                    with open(item / "metadata.json", "r") as m:
-                        meta = json.load(m)
-                        if meta.get("ebay_offer_published"):
-                            listed_items.append((item, meta.get("ebay_listing_url", "N/A")))
-                except Exception:
-                    pass
-                    
-    with open(log_path, "w") as f:
-        f.write("# eBay Listing Log\n\n")
-        f.write(f"**Total Photos Published / Available:** {len(listed_items)} / {total_items}\n\n")
+    item_rows = []
+    
+    # Collect all product folders recursively under root_dir
+    candidate_folders = []
+    for root, dirs, files in os.walk(root_dir):
+        r_path = Path(root)
+        if r_path.resolve() == root_dir.resolve() or r_path.name.startswith("."):
+            continue
+        jpg_files = [f for f in files if Path(f).suffix.lower() in ('.jpg', '.jpeg')]
+        if (r_path / "metadata.json").exists() or len(jpg_files) == 2:
+            candidate_folders.append(r_path)
+
+    candidate_folders = sorted(candidate_folders, key=lambda p: str(p.relative_to(root_dir)))
+
+    for item in candidate_folders:
+        total_folders += 1
+        meta_path = item / "metadata.json"
+        rel_path = item.relative_to(root_dir)
+        folder_link = f"[{rel_path}](./{rel_path})"
         
-        if listed_items:
-            f.write("## Listed Items\n\n")
-            f.write("| Folder / SKU | Status | eBay Listing URL |\n")
-            f.write("|--------------|--------|------------------|\n")
-            for item, url in listed_items:
-                folder_link = f"[{item.name}](./{item.name})"
-                f.write(f"| {folder_link} | ✅ Published | {url} |\n")
+        if meta_path.exists():
+            meta_generated_count += 1
+            try:
+                with open(meta_path, "r") as m:
+                    meta = json.load(m)
+                    
+                inv_created = bool(meta.get("ebay_inventory_created"))
+                offer_created = bool(meta.get("ebay_offer_created"))
+                offer_id = meta.get("ebay_offer_id", "-")
+                published = bool(meta.get("ebay_offer_published"))
+                listing_url = meta.get("ebay_listing_url")
+                
+                if inv_created:
+                    inventory_created_count += 1
+                if offer_created:
+                    offer_created_count += 1
+                if published:
+                    published_count += 1
+                    
+                meta_status = "✅"
+                inv_status = "✅" if inv_created else "❌"
+                offer_status = "✅" if offer_created else "❌"
+                
+                if published and listing_url:
+                    pub_status = f"[View Listing]({listing_url})"
+                elif published:
+                    pub_status = "✅"
+                else:
+                    pub_status = "❌"
+                    
+                item_rows.append((folder_link, meta_status, inv_status, offer_status, pub_status))
+            except Exception:
+                item_rows.append((folder_link, "✅", "❌", "❌", "❌"))
         else:
-            f.write("*No items have been published yet.*\n")
+            item_rows.append((folder_link, "❌", "❌", "❌", "❌"))
+
+    with open(log_path, "w") as f:
+        f.write(f"# eBay Listing Log ({root_dir.name})\n\n")
+        f.write("### Summary Totals\n")
+        f.write(f"- **Total Folders:** {total_folders}\n")
+        f.write(f"- **Metadata Generated:** {meta_generated_count}\n")
+        f.write(f"- **Inventory Items Created:** {inventory_created_count}\n")
+        f.write(f"- **Offers Created:** {offer_created_count}\n")
+        f.write(f"- **Listings Published:** {published_count}\n\n")
+        
+        f.write("## Listing Status Dashboard\n\n")
+        if item_rows:
+            f.write("| Folder / SKU | Metadata | Inventory Item | Offer ID | eBay Listing URL |\n")
+            f.write("|--------------|----------|----------------|----------|------------------|\n")
+            for row in item_rows:
+                f.write(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} |\n")
+        else:
+            f.write("*No items found.*\n")
             
-    print(f"\n[*] Updated listing log at {log_path.resolve()}")
+    print(f"\n[*] Updated single listing log at {log_path.resolve()}")
 
 def main():
     parser = argparse.ArgumentParser(description="Master script to run the full eBay listing workflow.")
@@ -446,6 +554,7 @@ def main():
     parser.add_argument("--env", choices=["sandbox", "production"], help="eBay environment to use (defaults to EBAY_ENV or production)")
     parser.add_argument("--count", type=int, default=None, help="Maximum number of items to process")
     parser.add_argument("--best-offer-pct", type=float, default=80.0, help="Auto-accept percentage for Best Offer (default: 80.0)")
+    parser.add_argument("--auto-decline-pct", type=float, default=50.0, help="Auto-decline percentage for Best Offer (default: 50.0)")
     args = parser.parse_args()
     
     target_dir = Path(args.directory).resolve()
@@ -505,18 +614,18 @@ def main():
     success_count = 0
     failed_count = 0
 
-    for item_dir in items_to_process:
-        res = process_single_item(item_dir, access_token, api_host, media_api_host, business_policies=business_policies, auto_accept_pct=args.best_offer_pct)
-        if res["success"]:
-            success_count += 1
-        else:
-            failed_count += 1
-            
-    print("\n" + "=" * 60)
-    print(f"Workflow Complete! Successful: {success_count} | Failed: {failed_count}")
-    print("=" * 60)
-
-    update_markdown_log(target_dir)
+    try:
+        for item_dir in items_to_process:
+            res = process_single_item(item_dir, access_token, api_host, media_api_host, business_policies=business_policies, auto_accept_pct=args.best_offer_pct, auto_decline_pct=args.auto_decline_pct)
+            if res["success"]:
+                success_count += 1
+            else:
+                failed_count += 1
+    finally:
+        print("\n" + "=" * 60)
+        print(f"Workflow Summary: Successful: {success_count} | Failed: {failed_count}")
+        print("=" * 60)
+        update_markdown_log(target_dir)
 
 if __name__ == "__main__":
     main()

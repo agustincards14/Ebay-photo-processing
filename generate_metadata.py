@@ -59,7 +59,7 @@ EBAY_THEMES = [
 ]
 
 def build_ebay_safe_sku(folder_name: str) -> str:
-    return re.sub(r"[^A-Za-z0-9]", "", folder_name)[:50]
+    return re.sub(r"[^A-Za-z0-9_\-]", "", folder_name)[:50]
 
 class PhotoMetadata(BaseModel):
     title: str = Field(description="Title of the photo. It should clearly capture the essence of the photo's content, and include the year and location if possible (e.g., 'Family Picnic in Central Park, 1955').")
@@ -194,33 +194,39 @@ def generate_metadata(folder_path: str, force: bool = False):
     direct_images = [f for f in subfolder_path.iterdir() if f.is_file() and f.suffix.lower() in ('.jpg', '.jpeg')]
     if len(direct_images) == 2:
         process_single_folder(subfolder_path, force=force)
-        return
+    else:
+        # 2. Recursive check: scan all child directories for folders containing 2 images
+        print(f"[*] Target '{subfolder_path.name}' does not contain 2 images directly. Recursively scanning child directories...")
+        
+        candidate_folders = []
+        for root, dirs, files in os.walk(subfolder_path):
+            root_path = Path(root)
+            if root_path.name.startswith(".") or root_path.name == "cheap_photos":
+                continue
+            jpg_files = [f for f in files if Path(f).suffix.lower() in ('.jpg', '.jpeg')]
+            if len(jpg_files) == 2:
+                candidate_folders.append(root_path)
 
-    # 2. Recursive check: scan all child directories for folders containing 2 images
-    print(f"[*] Target '{subfolder_path.name}' does not contain 2 images directly. Recursively scanning child directories...")
-    
-    candidate_folders = []
-    for root, dirs, files in os.walk(subfolder_path):
-        root_path = Path(root)
-        if root_path.name.startswith(".") or root_path.name == "cheap_photos":
-            continue
-        jpg_files = [f for f in files if Path(f).suffix.lower() in ('.jpg', '.jpeg')]
-        if len(jpg_files) == 2:
-            candidate_folders.append(root_path)
+        candidate_folders = sorted(candidate_folders)
 
-    candidate_folders = sorted(candidate_folders)
+        if not candidate_folders:
+            print(f"[-] No child directories containing 2 images were found under '{subfolder_path}'.")
+            return
 
-    if not candidate_folders:
-        print(f"[-] No child directories containing 2 images were found under '{subfolder_path}'.")
-        return
+        print(f"[*] Found {len(candidate_folders)} photo folder(s) to process.")
+        processed_count = 0
+        for folder in candidate_folders:
+            if process_single_folder(folder, force=force):
+                processed_count += 1
 
-    print(f"[*] Found {len(candidate_folders)} photo folder(s) to process.")
-    processed_count = 0
-    for folder in candidate_folders:
-        if process_single_folder(folder, force=force):
-            processed_count += 1
+        print(f"\n[*] Batch metadata generation complete for '{subfolder_path.name}'. Processed {processed_count}/{len(candidate_folders)} folders.")
 
-    print(f"\n[*] Batch metadata generation complete for '{subfolder_path.name}'. Processed {processed_count}/{len(candidate_folders)} folders.")
+    # Automatically update master listing_log.md dashboard
+    try:
+        from run_ebay_workflow import update_markdown_log
+        update_markdown_log(subfolder_path)
+    except Exception as e:
+        print(f"[*] Note: Could not update listing_log.md: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate metadata for organized photos using Gemini.")
