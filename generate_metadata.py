@@ -62,7 +62,7 @@ def build_ebay_safe_sku(folder_name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_\-]", "", folder_name)[:50]
 
 class PhotoMetadata(BaseModel):
-    title: str = Field(description="Title of the photo. It should clearly capture the essence of the photo's content, and include the year and location if possible (e.g., 'Family Picnic in Central Park, 1955').")
+    title: str = Field(description="Title of the photo. Must always include the word 'Photo' (e.g., '... Snapshot Photo' or '... Vintage Photo'). It should clearly capture the essence of the photo's content, and include the year and location if possible (e.g., 'Family Picnic in Central Park, 1955 B&W Snapshot Photo'). Strictly under 80 characters.")
     year: str = Field(description="Exact year the photo was taken (estimated if unknown).")
     subjects: list[str] = Field(description="Subjects describing the photo.")
     themes: list[str] = Field(description="List of 1 to 3 relevant themes selected from the allowed list, ordered by relevance.")
@@ -145,7 +145,7 @@ def process_single_folder(subfolder_path: Path, force: bool = False) -> bool:
         "Analyze these two sides of a scanned photograph (front and back). "
         "Please extract and synthesize metadata about this photo. "
         "Things like the year, decade, a list of subjects, estimated location, image_color, photo_type, etc."
-        "Provide a title strictly under 80 characters including key search terms (decade, subject, photo type, color, location). Make sure to prioritize the subject of the photo, then append attributes and keywords after a comma. "
+        "Provide a title strictly under 80 characters including key search terms (decade, subject, photo type, color, location). The title MUST always include the word 'Photo' (e.g. ending with 'Snapshot Photo' or 'Vintage Photo'). Make sure to prioritize the subject of the photo, then append attributes and keywords after a comma. "
         "a verbatim transcription of any handwritten notes, stamps, or text on the back in 'back_text_transcription' (or empty string if none), "
         "a detailed description including the setting, any cultural or political anchors of that time, "
         "and estimated price based on content and market trends (e.g. '$12'). Photos that are blurry or have generic subjects should be priced lower relative to clear photos and portrait photos of people."
@@ -173,6 +173,15 @@ def process_single_folder(subfolder_path: Path, force: bool = False) -> bool:
             raise ValueError("Received an empty response from Gemini.")
 
         json_obj = json.loads(metadata)
+        
+        # Ensure 'Photo' is always included in the title as a safety net
+        title = json_obj.get("title", "").strip()
+        if "photo" not in title.lower():
+            title = f"{title} Photo"
+            if len(title) > 80:
+                title = title[:80]
+            json_obj["title"] = title
+
         json_obj["sku"] = build_ebay_safe_sku(subfolder_path.name)
         with open(metadata_file_path, "w") as f:
             json.dump(json_obj, f, indent=4)

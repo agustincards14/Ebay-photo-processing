@@ -153,9 +153,14 @@ def build_inventory_item_payload(folder_path: Path, meta: dict, image_urls: list
     if themes:
         aspects["Theme"] = themes if isinstance(themes, list) else [themes]
 
+    raw_title = meta.get("title", "").strip()
+    if raw_title and "photo" not in raw_title.lower():
+        raw_title = f"{raw_title} Photo"
+    title_val = raw_title[:80]
+
     inventory_item = {
         "product": {
-            "title": meta.get("title", "")[:80],
+            "title": title_val,
             "description": desc,
             "aspects": aspects,
             "imageUrls": image_urls,
@@ -527,6 +532,8 @@ def update_markdown_log(target_dir: Path):
         else:
             item_rows.append((folder_link, "❌", "❌", "❌", "❌"))
 
+    pub_percentage = (published_count / total_folders * 100) if total_folders > 0 else 0.0
+
     with open(log_path, "w") as f:
         f.write(f"# eBay Listing Log ({root_dir.name})\n\n")
         f.write("### Summary Totals\n")
@@ -534,7 +541,8 @@ def update_markdown_log(target_dir: Path):
         f.write(f"- **Metadata Generated:** {meta_generated_count}\n")
         f.write(f"- **Inventory Items Created:** {inventory_created_count}\n")
         f.write(f"- **Offers Created:** {offer_created_count}\n")
-        f.write(f"- **Listings Published:** {published_count}\n\n")
+        f.write(f"- **Listings Published:** {published_count}\n")
+        f.write(f"- **Percentage Published:** {pub_percentage:.1f}%\n\n")
         
         f.write("## Listing Status Dashboard\n\n")
         if item_rows:
