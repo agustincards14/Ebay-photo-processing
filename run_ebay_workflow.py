@@ -238,8 +238,8 @@ def fetch_business_policies(access_token: str, api_host: str, store: str) -> dic
 
     return policies
 
-def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[str, Any], auto_accept_pct: float = 80.0, auto_decline_pct: float = 50.0) -> dict:
-    """Builds the offer payload using metadata, store-specific business policies, and best offer terms (auto-accept & auto-decline)."""
+def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[str, Any]) -> dict:
+    """Builds the offer payload using metadata and store-specific business policies."""
     sku = meta.get("sku", folder_path.name)
     price_str = str(meta.get("price", "10")).replace('$', '').replace(',', '').strip()
     try:
@@ -248,25 +248,6 @@ def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[s
     except ValueError:
         price_num = 10.00
         price_val = "10.00"
-
-    auto_accept_num = round(price_num * (auto_accept_pct / 100.0), 2)
-    auto_accept_val = f"{auto_accept_num:.2f}"
-
-    auto_decline_num = round(price_num * (auto_decline_pct / 100.0), 2)
-    auto_decline_val = f"{auto_decline_num:.2f}"
-
-    listing_policies: dict[str, Any] = dict(business_policies)
-    listing_policies["bestOfferTerms"] = {
-        "bestOfferEnabled": True,
-        "autoAcceptPrice": {
-            "value": auto_accept_val,
-            "currency": "USD"
-        },
-        "autoDeclinePrice": {
-            "value": auto_decline_val,
-            "currency": "USD"
-        }
-    }
 
     offer_data = {
         "sku": sku,
@@ -280,11 +261,11 @@ def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[s
                 "currency": "USD"
             }
         },
-        "listingPolicies": listing_policies
+        "listingPolicies": dict(business_policies)
     }
     return offer_data
 
-def process_single_item(folder_path: Path, access_token: str, api_host: str, media_api_host: str, business_policies: dict[str, Any], auto_accept_pct: float = 80.0, auto_decline_pct: float = 60.0) -> dict:
+def process_single_item(folder_path: Path, access_token: str, api_host: str, media_api_host: str, business_policies: dict[str, Any]) -> dict:
     """Executes the full pipeline for a single photo item folder with atomic state updates."""
     print(f"\n--- Processing Item: {folder_path.name} ---")
     stats = {"success": False}
@@ -365,14 +346,14 @@ def process_single_item(folder_path: Path, access_token: str, api_host: str, med
     else:
         print(" -> Step 2: Inventory item already exists on eBay (Skipping).")
 
-    # Step 3: Create Local offer.json (with Best Offer) & Create Offer on eBay
+    # Step 3: Create Local offer.json & Create Offer on eBay
     offer_json_path = folder_path / "offer.json"
-    offer_payload = build_offer_payload(folder_path, meta, business_policies=business_policies, auto_accept_pct=auto_accept_pct, auto_decline_pct=auto_decline_pct)
+    offer_payload = build_offer_payload(folder_path, meta, business_policies=business_policies)
     with open(offer_json_path, "w") as f:
         json.dump(offer_payload, f, indent=4)
 
     if not meta.get("ebay_offer_created"):
-        print(f" -> Step 3: Creating Offer on eBay with Best Offer enabled ({auto_accept_pct}% auto-accept / {auto_decline_pct}% auto-decline)...")
+        print(" -> Step 3: Creating Offer on eBay...")
         post_url = f"{api_host}/sell/inventory/v1/offer"
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -561,8 +542,6 @@ def main():
     parser.add_argument("--store", help="eBay Store Account to use (defaults to EBAY_STORE or photo_vault)")
     parser.add_argument("--env", choices=["sandbox", "production"], help="eBay environment to use (defaults to EBAY_ENV or production)")
     parser.add_argument("--count", type=int, default=None, help="Maximum number of items to process")
-    parser.add_argument("--best-offer-pct", type=float, default=80.0, help="Auto-accept percentage for Best Offer (default: 80.0)")
-    parser.add_argument("--auto-decline-pct", type=float, default=50.0, help="Auto-decline percentage for Best Offer (default: 50.0)")
     args = parser.parse_args()
     
     target_dir = Path(args.directory).resolve()
@@ -624,7 +603,7 @@ def main():
 
     try:
         for item_dir in items_to_process:
-            res = process_single_item(item_dir, access_token, api_host, media_api_host, business_policies=business_policies, auto_accept_pct=args.best_offer_pct, auto_decline_pct=args.auto_decline_pct)
+            res = process_single_item(item_dir, access_token, api_host, media_api_host, business_policies=business_policies)
             if res["success"]:
                 success_count += 1
             else:
