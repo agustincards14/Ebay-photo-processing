@@ -61,8 +61,19 @@ EBAY_THEMES = [
 def build_ebay_safe_sku(folder_name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_\-]", "", folder_name)[:50]
 
+DEFAULT_PRICE = "$19.95"
+
 class PhotoMetadata(BaseModel):
-    title: str = Field(description="Title of the photo. Must always include the word 'Photo' (e.g., '... Snapshot Photo' or '... Vintage Photo'). It should clearly capture the essence of the photo's content, and include the year and location if possible (e.g., 'Family Picnic in Central Park, 1955 B&W Snapshot Photo'). Strictly under 80 characters.")
+    title: str = Field(
+        description=(
+            "Descriptive title of the photo strictly under 80 characters. "
+            "Must always include the word 'Photo' (e.g., '... Snapshot Photo' or '... Vintage Photo'). "
+            "Incorporate rich subject-descriptive adjectives (e.g., age, size, gender, color, style/attire, mood, relationship) "
+            "and environment/setting details (e.g., climate, color, structure, ambience). "
+            "Prioritize the main subject with rich adjectives, then append key context (year/decade, location, format). "
+            "Example: 'Smiling Young Couple on Sunny Beach, 1952 Florida B&W Snapshot Photo'. Strictly under 80 characters."
+        )
+    )
     year: str = Field(description="Exact year the photo was taken (estimated if unknown).")
     subjects: list[str] = Field(description="Subjects describing the photo.")
     themes: list[str] = Field(description="List of 1 to 3 relevant themes selected from the allowed list, ordered by relevance.")
@@ -70,9 +81,8 @@ class PhotoMetadata(BaseModel):
     image_color: str = Field(description="Color style: 'Black & White', 'Sepia', 'Color', 'Cyanotype', or 'Monochrome'.")
     photo_type: str = Field(description="Physical format: 'Snapshot', 'Real Photo Postcard (RPPC)', 'Cabinet Card', 'Photograph', 'Stereoview', 'Tintype', 'Slide'.")
     back_text_transcription: str = Field(description="Verbatim transcription of any handwritten notes, stamps, typewriter text, or annotations on the back. Leave empty string if none.")
-    description: str = Field(description="Detailed description including the setting and any cultural or political anchors of that time.")
+    description: str = Field(description="Detailed description including the setting, style/attire, mood, relationships, and any cultural or political anchors of that time that relate to the subject or photo.")
     size: str = Field(description="The physical size of the photo in inches (e.g., '2.5x3.5in').")
-    price: str = Field(description="Estimated price of the photo based on its content, condition, and market trends. It should be a single value, not a range, and should be expressed in USD (e.g., '$11').")
 
 def identify_front_back(image_paths: list[Path]) -> tuple[Path, Path]:
     if len(image_paths) != 2:
@@ -148,8 +158,6 @@ def process_single_folder(subfolder_path: Path, force: bool = False) -> bool:
         "Provide a title strictly under 80 characters including key search terms (decade, subject, photo type, color, location). The title MUST always include the word 'Photo' (e.g. ending with 'Snapshot Photo' or 'Vintage Photo'). Make sure to prioritize the subject of the photo, then append attributes and keywords after a comma. "
         "a verbatim transcription of any handwritten notes, stamps, or text on the back in 'back_text_transcription' (or empty string if none), "
         "a detailed description including the setting, any cultural or political anchors of that time, "
-        "and estimated price based on content and market trends (e.g. '$12'). Photos that are blurry or have generic subjects should be priced lower relative to clear photos and portrait photos of people."
-        # "The price value should be clamped to a value between 8 and 14."
         "Also select 1 to 3 relevant themes from the allowed list: " + ", ".join(EBAY_THEMES) + ". "
         f"The physical size of the photo has been calculated as {size_str}. Include this exactly in the 'size' field."
     )
@@ -174,6 +182,9 @@ def process_single_folder(subfolder_path: Path, force: bool = False) -> bool:
 
         json_obj = json.loads(metadata)
         
+        # Hardcode firm price without consulting Gemini
+        json_obj["price"] = DEFAULT_PRICE
+
         # Ensure 'Photo' is always included in the title as a safety net
         title = json_obj.get("title", "").strip()
         if "photo" not in title.lower():
