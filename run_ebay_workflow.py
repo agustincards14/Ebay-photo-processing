@@ -21,6 +21,7 @@ import sys
 import json
 import re
 import argparse
+import subprocess
 from pathlib import Path
 import requests
 
@@ -536,12 +537,50 @@ def update_markdown_log(target_dir: Path):
             
     print(f"\n[*] Updated single listing log at {log_path.resolve()}")
 
+def git_commit_workflow_results(target_dir: Path, success_count: int):
+    """Stages and commits changes made during the workflow."""
+    if success_count == 0:
+        return
+
+    try:
+        # Check if we are inside a git repository
+        repo_check = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            capture_output=True,
+            text=True
+        )
+        if repo_check.returncode != 0:
+            return
+
+        root_dir = find_epscan_root(target_dir)
+        log_path = root_dir / "listing_log.md"
+
+        # Stage directory changes (ignoring any ignored files like raw JPEGs safely)
+        subprocess.run(["git", "add", "--ignore-errors", str(target_dir)], capture_output=True)
+
+        # Stage listing_log.md if it exists
+        if log_path.exists():
+            subprocess.run(["git", "add", "-f", str(log_path)], capture_output=True)
+
+        # Check if there are staged changes to commit
+        diff_check = subprocess.run(["git", "diff", "--staged", "--quiet"])
+        if diff_check.returncode != 0:
+            folder_name = target_dir.name
+            commit_msg = f"feat(ebay): listed {success_count} item(s) in {folder_name}"
+            subprocess.run(["git", "commit", "-m", commit_msg], check=True)
+            print(f"📦 [Git] Committed changes: '{commit_msg}'")
+        else:
+            print("📦 [Git] No new changes to commit.")
+    except Exception as e:
+        print(f"⚠️ [Git] Auto-commit failed: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description="Master script to run the full eBay listing workflow.")
     parser.add_argument("directory", help="Target directory (parent folder like EPSCAN, or single item folder)")
     parser.add_argument("--store", help="eBay Store Account to use (defaults to EBAY_STORE or photo_vault)")
     parser.add_argument("--env", choices=["sandbox", "production"], help="eBay environment to use (defaults to EBAY_ENV or production)")
     parser.add_argument("--count", type=int, default=None, help="Maximum number of items to process")
+    parser.add_argument("--no-commit", action="store_true", help="Skip automatic git commit after execution")
     args = parser.parse_args()
     
     target_dir = Path(args.directory).resolve()
@@ -613,6 +652,8 @@ def main():
         print(f"Workflow Summary: Successful: {success_count} | Failed: {failed_count}")
         print("=" * 60)
         update_markdown_log(target_dir)
+        if not args.no_commit and success_count > 0:
+            git_commit_workflow_results(target_dir, success_count)
 
 if __name__ == "__main__":
     main()

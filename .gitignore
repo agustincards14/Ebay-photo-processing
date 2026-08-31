@@ -168,7 +168,6 @@ AGENTS.md
 EBAY_INVENTORY_API.md
 commerce_media_v1_beta_oas3.json
 sell_inventory_v1_oas3.json
-listing_log.md
 
 # EPSCAN photo files (ignore JPEGs inside EPSCAN, keep JSON metadata)
 EPSCAN/
