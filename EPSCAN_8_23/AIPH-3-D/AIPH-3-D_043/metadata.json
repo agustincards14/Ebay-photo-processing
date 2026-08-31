@@ -23,15 +23,7 @@
     "size": "3.5x3.5in",
     "price": "$19.95",
     "sku": "AIPH-3-D_043",
-    "ebay_inventory_created": false,
-    "ebay_offer_created": false,
-    "ebay_offer_id": "247181367011",
-    "compliance_reviewed": true,
-    "compliance_status": "PASSED",
-    "compliance_risk_level": "MODIFIED",
-    "compliance_violations": [
-        "Minor Protection Policy Violation: 'Shirtless' in proximity to 'Young Girl'",
-        "Minor Protection Policy Violation: 'affectionately' describing interaction with a minor"
-    ],
-    "compliance_notes": "The original title and description contained 'shirtless' in conjunction with 'young girl', which violates eBay's Minor Protection & Child Safety policy. Additionally, the term 'affectionately' describing the interaction between an adult and a minor was flagged as potentially suggestive. These terms have been removed or reworded to ensure compliance, making the listing safe and wholesome for all audiences while preserving the historical context of the photograph."
+    "ebay_inventory_created": true,
+    "ebay_offer_created": true,
+    "ebay_offer_id": "247181367011"
 }
