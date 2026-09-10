@@ -5,8 +5,8 @@
 - **Metadata Generated:** 420
 - **Inventory Items Created:** 420
 - **Offers Created:** 420
-- **Listings Published:** 414
-- **Percentage Published:** 59.7%
+- **Listings Published:** 415
+- **Percentage Published:** 59.8%
 
 ## Listing Status Dashboard
 
@@ -414,7 +414,7 @@
 | [AIPH-3-Q/AIPH-3-Q_003](./AIPH-3-Q/AIPH-3-Q_003) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800639302769) |
 | [AIPH-3-Q/AIPH-3-Q_005](./AIPH-3-Q/AIPH-3-Q_005) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800639298209) |
 | [AIPH-3-Q/AIPH-3-Q_007](./AIPH-3-Q/AIPH-3-Q_007) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800639298429) |
-| [AIPH-3-Q/AIPH-3-Q_009](./AIPH-3-Q/AIPH-3-Q_009) | ✅ | ✅ | ✅ | ❌ |
+| [AIPH-3-Q/AIPH-3-Q_009](./AIPH-3-Q/AIPH-3-Q_009) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800639303526) |
 | [AIPH-3-Q/AIPH-3-Q_011](./AIPH-3-Q/AIPH-3-Q_011) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800639298952) |
 | [AIPH-3-Q/AIPH-3-Q_013](./AIPH-3-Q/AIPH-3-Q_013) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800639299053) |
 | [AIPH-3-Q/AIPH-3-Q_015](./AIPH-3-Q/AIPH-3-Q_015) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800639299155) |
