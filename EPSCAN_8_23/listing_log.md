@@ -3,10 +3,10 @@
 ### Summary Totals
 - **Total Folders:** 682
 - **Metadata Generated:** 475
-- **Inventory Items Created:** 474
-- **Offers Created:** 474
-- **Listings Published:** 469
-- **Percentage Published:** 68.8%
+- **Inventory Items Created:** 475
+- **Offers Created:** 475
+- **Listings Published:** 470
+- **Percentage Published:** 68.9%
 
 ## Listing Status Dashboard
 
@@ -478,7 +478,7 @@
 | [AIPH-3-S/AIPH-3-S_023](./AIPH-3-S/AIPH-3-S_023) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800654222862) |
 | [AIPH-3-S/AIPH-3-S_025](./AIPH-3-S/AIPH-3-S_025) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800654223329) |
 | [AIPH-3-S/AIPH-3-S_027](./AIPH-3-S/AIPH-3-S_027) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800654223520) |
-| [AIPH-3-S/AIPH-3-S_029](./AIPH-3-S/AIPH-3-S_029) | ✅ | ❌ | ❌ | ❌ |
+| [AIPH-3-S/AIPH-3-S_029](./AIPH-3-S/AIPH-3-S_029) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800654225113) |
 | [AIPH-3-S/AIPH-3-S_031](./AIPH-3-S/AIPH-3-S_031) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800654223599) |
 | [AIPH-3-S/AIPH-3-S_033](./AIPH-3-S/AIPH-3-S_033) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800654223665) |
 | [AIPH-3-S/AIPH-3-S_035](./AIPH-3-S/AIPH-3-S_035) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800654223752) |
