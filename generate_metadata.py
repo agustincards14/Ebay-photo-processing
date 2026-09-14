@@ -162,12 +162,12 @@ def process_single_folder(subfolder_path: Path, force: bool = False) -> bool:
         f"The physical size of the photo has been calculated as {size_str}. Include this exactly in the 'size' field."
     )
 
-    print(f"Requesting metadata from Gemini (gemini-3.7-flash) for {subfolder_path.name}...")
+    print(f"Requesting metadata from Gemini (gemini-3.8-flash) for {subfolder_path.name}...")
     client = get_client()
 
     try:
         response = client.models.generate_content(
-            model='gemini-3.7-flash',
+            model='gemini-3.8-flash',
             contents=[prompt, front_img, back_img],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -244,7 +244,7 @@ def generate_metadata(folder_path: str, force: bool = False):
     # Automatically update master listing_log.md dashboard
     try:
         from run_ebay_workflow import update_markdown_log
-        update_markdown_log(subfolder_path)
+        update_markdown_log(subfolder_path, script_name="generate_metadata.py")
     except Exception as e:
         print(f"[*] Note: Could not update listing_log.md: {e}")
 

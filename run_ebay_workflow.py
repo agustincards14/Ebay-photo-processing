@@ -25,7 +25,9 @@ import subprocess
 from pathlib import Path
 import requests
 
-from typing import Any
+from typing import Any, Optional
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from ebay_oauth_helper import check_and_get_token, ENVIRONMENTS
 
 DEFAULT_BUSINESS_POLICIES: dict[str, Any] = {
@@ -439,7 +441,7 @@ def find_epscan_root(path: Path) -> Path:
         curr = curr.parent
     return epscan_root or path.resolve()
 
-def update_markdown_log(target_dir: Path):
+def update_markdown_log(target_dir: Path, script_name: Optional[str] = None, timestamp_str: Optional[str] = None):
     """Generates an updated single markdown listing log at the root EPSCAN directory."""
     root_dir = find_epscan_root(target_dir)
     log_path = root_dir / "listing_log.md"
@@ -516,8 +518,34 @@ def update_markdown_log(target_dir: Path):
 
     pub_percentage = (published_count / total_folders * 100) if total_folders > 0 else 0.0
 
+    # Determine script name that triggered this update
+    if not script_name:
+        if sys.argv and sys.argv[0]:
+            caller_name = Path(sys.argv[0]).name
+            if caller_name and caller_name != "-c":
+                script_name = caller_name
+        if not script_name or script_name == "-c":
+            import inspect
+            for frame in inspect.stack():
+                fname = Path(frame.filename).name
+                if fname not in ("run_ebay_workflow.py", "<string>", "<stdin>"):
+                    script_name = fname
+                    break
+        if not script_name or script_name == "-c":
+            script_name = "run_ebay_workflow.py"
+
+    # Determine current timestamp in readable PST format (America/Los_Angeles)
+    if not timestamp_str:
+        try:
+            from zoneinfo import ZoneInfo
+            pst_now = datetime.now(ZoneInfo("America/Los_Angeles"))
+        except Exception:
+            pst_now = datetime.now().astimezone()
+        timestamp_str = pst_now.strftime("%Y-%m-%d %I:%M:%S %p %Z")
+
     with open(log_path, "w") as f:
         f.write(f"# eBay Listing Log ({root_dir.name})\n\n")
+        f.write(f"**Last Updated:** {timestamp_str} by `{script_name}`\n\n")
         f.write("### Summary Totals\n")
         f.write(f"- **Total Folders:** {total_folders}\n")
         f.write(f"- **Metadata Generated:** {meta_generated_count}\n")
@@ -581,12 +609,17 @@ def main():
     parser.add_argument("--env", choices=["sandbox", "production"], help="eBay environment to use (defaults to EBAY_ENV or production)")
     parser.add_argument("--count", type=int, default=None, help="Maximum number of items to process")
     parser.add_argument("--no-commit", action="store_true", help="Skip automatic git commit after execution")
+    parser.add_argument("--log-only", action="store_true", help="Only refresh/regenerate the listing_log.md without running eBay API listing workflow")
     args = parser.parse_args()
     
     target_dir = Path(args.directory).resolve()
     if not target_dir.exists():
         print(f"[-] Error: Target directory '{target_dir}' does not exist.")
         sys.exit(1)
+
+    if args.log_only:
+        update_markdown_log(target_dir, script_name="run_ebay_workflow.py")
+        sys.exit(0)
         
     store = args.store or os.environ.get("EBAY_STORE", "photo_vault")
     env = args.env or os.environ.get("EBAY_ENV", "production").lower()
@@ -651,7 +684,7 @@ def main():
         print("\n" + "=" * 60)
         print(f"Workflow Summary: Successful: {success_count} | Failed: {failed_count}")
         print("=" * 60)
-        update_markdown_log(target_dir)
+        update_markdown_log(target_dir, script_name="run_ebay_workflow.py")
         if not args.no_commit and success_count > 0:
             git_commit_workflow_results(target_dir, success_count)
 

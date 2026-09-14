@@ -104,6 +104,12 @@ def organize_photos(directory_path: str):
             print(f"\nNo unorganized photo pairs found ({len(skipped_dirs)} subdirectories are already organized).")
         else:
             print("No valid pairs of photos found in the directory.")
+    else:
+        try:
+            from run_ebay_workflow import update_markdown_log
+            update_markdown_log(dir_path, script_name="organize_photos.py")
+        except Exception as e:
+            pass
 
 if __name__ == "__main__":
     script_dir = Path(__file__).parent.resolve()

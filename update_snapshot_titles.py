@@ -260,6 +260,13 @@ def process_inventory_files(
     print(f"Elapsed Time         : {elapsed:.2f}s")
     print("=" * 80)
 
+    if success_count > 0 and not dry_run:
+        try:
+            from run_ebay_workflow import update_markdown_log
+            update_markdown_log(target_dir, script_name="update_snapshot_titles.py")
+        except Exception as e:
+            pass
+
 
 def main():
     parser = argparse.ArgumentParser(

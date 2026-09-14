@@ -1,5 +1,7 @@
 # eBay Listing Log (EPSCAN_7_26)
 
+**Last Updated:** 2026-08-12 10:51:27 AM PDT by `run_ebay_workflow.py`
+
 ### Summary Totals
 - **Total Folders:** 594
 - **Metadata Generated:** 594
