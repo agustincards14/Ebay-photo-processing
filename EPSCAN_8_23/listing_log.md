@@ -1,14 +1,14 @@
 # eBay Listing Log (EPSCAN_8_23)
 
-**Last Updated:** 2026-09-14 12:45:16 PM PDT by `run_ebay_workflow.py`
+**Last Updated:** 2026-09-15 11:00:34 AM PDT by `run_ebay_workflow.py`
 
 ### Summary Totals
 - **Total Folders:** 679
 - **Metadata Generated:** 558
-- **Inventory Items Created:** 535
-- **Offers Created:** 535
-- **Listings Published:** 530
-- **Percentage Published:** 78.1%
+- **Inventory Items Created:** 558
+- **Offers Created:** 558
+- **Listings Published:** 553
+- **Percentage Published:** 81.4%
 
 ## Listing Status Dashboard
 
@@ -549,29 +549,29 @@
 | [AIPH-3-U/AIPH-3-U_071](./AIPH-3-U/AIPH-3-U_071) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800662266485) |
 | [AIPH-3-U/AIPH-3-U_073](./AIPH-3-U/AIPH-3-U_073) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800662266647) |
 | [AIPH-3-U/AIPH-3-U_075](./AIPH-3-U/AIPH-3-U_075) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800662266835) |
-| [AIPH-3-V/AIPH-3-V_001](./AIPH-3-V/AIPH-3-V_001) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_003](./AIPH-3-V/AIPH-3-V_003) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_005](./AIPH-3-V/AIPH-3-V_005) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_007](./AIPH-3-V/AIPH-3-V_007) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_009](./AIPH-3-V/AIPH-3-V_009) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_011](./AIPH-3-V/AIPH-3-V_011) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_013](./AIPH-3-V/AIPH-3-V_013) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_015](./AIPH-3-V/AIPH-3-V_015) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_017](./AIPH-3-V/AIPH-3-V_017) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_019](./AIPH-3-V/AIPH-3-V_019) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_021](./AIPH-3-V/AIPH-3-V_021) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_023](./AIPH-3-V/AIPH-3-V_023) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_027](./AIPH-3-V/AIPH-3-V_027) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_029](./AIPH-3-V/AIPH-3-V_029) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_031](./AIPH-3-V/AIPH-3-V_031) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_033](./AIPH-3-V/AIPH-3-V_033) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_035](./AIPH-3-V/AIPH-3-V_035) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_037](./AIPH-3-V/AIPH-3-V_037) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_039](./AIPH-3-V/AIPH-3-V_039) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_041](./AIPH-3-V/AIPH-3-V_041) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_043](./AIPH-3-V/AIPH-3-V_043) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_045](./AIPH-3-V/AIPH-3-V_045) | ✅ | ❌ | ❌ | ❌ |
-| [AIPH-3-V/AIPH-3-V_047](./AIPH-3-V/AIPH-3-V_047) | ✅ | ❌ | ❌ | ❌ |
+| [AIPH-3-V/AIPH-3-V_001](./AIPH-3-V/AIPH-3-V_001) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666789941) |
+| [AIPH-3-V/AIPH-3-V_003](./AIPH-3-V/AIPH-3-V_003) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666790058) |
+| [AIPH-3-V/AIPH-3-V_005](./AIPH-3-V/AIPH-3-V_005) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666790135) |
+| [AIPH-3-V/AIPH-3-V_007](./AIPH-3-V/AIPH-3-V_007) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666790248) |
+| [AIPH-3-V/AIPH-3-V_009](./AIPH-3-V/AIPH-3-V_009) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666790357) |
+| [AIPH-3-V/AIPH-3-V_011](./AIPH-3-V/AIPH-3-V_011) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666790464) |
+| [AIPH-3-V/AIPH-3-V_013](./AIPH-3-V/AIPH-3-V_013) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666790553) |
+| [AIPH-3-V/AIPH-3-V_015](./AIPH-3-V/AIPH-3-V_015) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666790776) |
+| [AIPH-3-V/AIPH-3-V_017](./AIPH-3-V/AIPH-3-V_017) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666790879) |
+| [AIPH-3-V/AIPH-3-V_019](./AIPH-3-V/AIPH-3-V_019) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666791009) |
+| [AIPH-3-V/AIPH-3-V_021](./AIPH-3-V/AIPH-3-V_021) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666791154) |
+| [AIPH-3-V/AIPH-3-V_023](./AIPH-3-V/AIPH-3-V_023) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666791355) |
+| [AIPH-3-V/AIPH-3-V_027](./AIPH-3-V/AIPH-3-V_027) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666791471) |
+| [AIPH-3-V/AIPH-3-V_029](./AIPH-3-V/AIPH-3-V_029) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666791688) |
+| [AIPH-3-V/AIPH-3-V_031](./AIPH-3-V/AIPH-3-V_031) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666791790) |
+| [AIPH-3-V/AIPH-3-V_033](./AIPH-3-V/AIPH-3-V_033) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666791885) |
+| [AIPH-3-V/AIPH-3-V_035](./AIPH-3-V/AIPH-3-V_035) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666792024) |
+| [AIPH-3-V/AIPH-3-V_037](./AIPH-3-V/AIPH-3-V_037) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666792168) |
+| [AIPH-3-V/AIPH-3-V_039](./AIPH-3-V/AIPH-3-V_039) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666792362) |
+| [AIPH-3-V/AIPH-3-V_041](./AIPH-3-V/AIPH-3-V_041) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666792595) |
+| [AIPH-3-V/AIPH-3-V_043](./AIPH-3-V/AIPH-3-V_043) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666792675) |
+| [AIPH-3-V/AIPH-3-V_045](./AIPH-3-V/AIPH-3-V_045) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666792778) |
+| [AIPH-3-V/AIPH-3-V_047](./AIPH-3-V/AIPH-3-V_047) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800666792903) |
 | [AIPH-3-W/AIPH-3-W_001](./AIPH-3-W/AIPH-3-W_001) | ❌ | ❌ | ❌ | ❌ |
 | [AIPH-3-W/AIPH-3-W_003](./AIPH-3-W/AIPH-3-W_003) | ❌ | ❌ | ❌ | ❌ |
 | [AIPH-3-W/AIPH-3-W_005](./AIPH-3-W/AIPH-3-W_005) | ❌ | ❌ | ❌ | ❌ |
