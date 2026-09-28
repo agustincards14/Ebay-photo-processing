@@ -1,14 +1,14 @@
 # eBay Listing Log (EPSCAN_9_20)
 
-**Last Updated:** 2026-09-24 09:48:36 AM PDT by `run_ebay_workflow.py`
+**Last Updated:** 2026-09-28 12:58:32 PM PDT by `run_ebay_workflow.py`
 
 ### Summary Totals
 - **Total Folders:** 424
-- **Metadata Generated:** 56
-- **Inventory Items Created:** 56
-- **Offers Created:** 56
-- **Listings Published:** 56
-- **Percentage Published:** 13.2%
+- **Metadata Generated:** 95
+- **Inventory Items Created:** 95
+- **Offers Created:** 95
+- **Listings Published:** 95
+- **Percentage Published:** 22.4%
 
 ## Listing Status Dashboard
 
@@ -70,45 +70,45 @@
 | [AIPH-4-B/AIPH-4-B_057](./AIPH-4-B/AIPH-4-B_057) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800710210130) |
 | [AIPH-4-B/AIPH-4-B_059](./AIPH-4-B/AIPH-4-B_059) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800710211525) |
 | [AIPH-4-B/AIPH-4-B_061](./AIPH-4-B/AIPH-4-B_061) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800710212735) |
-| [AIPH-4-C/AIPH-4-C_001](./AIPH-4-C/AIPH-4-C_001) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_003](./AIPH-4-C/AIPH-4-C_003) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_005](./AIPH-4-C/AIPH-4-C_005) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_007](./AIPH-4-C/AIPH-4-C_007) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_009](./AIPH-4-C/AIPH-4-C_009) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_011](./AIPH-4-C/AIPH-4-C_011) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_013](./AIPH-4-C/AIPH-4-C_013) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_015](./AIPH-4-C/AIPH-4-C_015) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_017](./AIPH-4-C/AIPH-4-C_017) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_019](./AIPH-4-C/AIPH-4-C_019) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_021](./AIPH-4-C/AIPH-4-C_021) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_023](./AIPH-4-C/AIPH-4-C_023) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_025](./AIPH-4-C/AIPH-4-C_025) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_027](./AIPH-4-C/AIPH-4-C_027) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_029](./AIPH-4-C/AIPH-4-C_029) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_031](./AIPH-4-C/AIPH-4-C_031) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_033](./AIPH-4-C/AIPH-4-C_033) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_035](./AIPH-4-C/AIPH-4-C_035) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_037](./AIPH-4-C/AIPH-4-C_037) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_039](./AIPH-4-C/AIPH-4-C_039) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_041](./AIPH-4-C/AIPH-4-C_041) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_043](./AIPH-4-C/AIPH-4-C_043) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_045](./AIPH-4-C/AIPH-4-C_045) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_047](./AIPH-4-C/AIPH-4-C_047) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_049](./AIPH-4-C/AIPH-4-C_049) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_051](./AIPH-4-C/AIPH-4-C_051) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_053](./AIPH-4-C/AIPH-4-C_053) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_055](./AIPH-4-C/AIPH-4-C_055) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_057](./AIPH-4-C/AIPH-4-C_057) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_059](./AIPH-4-C/AIPH-4-C_059) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_061](./AIPH-4-C/AIPH-4-C_061) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_063](./AIPH-4-C/AIPH-4-C_063) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_065](./AIPH-4-C/AIPH-4-C_065) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_067](./AIPH-4-C/AIPH-4-C_067) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_069](./AIPH-4-C/AIPH-4-C_069) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_071](./AIPH-4-C/AIPH-4-C_071) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_073](./AIPH-4-C/AIPH-4-C_073) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_075](./AIPH-4-C/AIPH-4-C_075) | ❌ | ❌ | ❌ | ❌ |
-| [AIPH-4-C/AIPH-4-C_077](./AIPH-4-C/AIPH-4-C_077) | ❌ | ❌ | ❌ | ❌ |
+| [AIPH-4-C/AIPH-4-C_001](./AIPH-4-C/AIPH-4-C_001) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730111705) |
+| [AIPH-4-C/AIPH-4-C_003](./AIPH-4-C/AIPH-4-C_003) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730111794) |
+| [AIPH-4-C/AIPH-4-C_005](./AIPH-4-C/AIPH-4-C_005) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730111863) |
+| [AIPH-4-C/AIPH-4-C_007](./AIPH-4-C/AIPH-4-C_007) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730111910) |
+| [AIPH-4-C/AIPH-4-C_009](./AIPH-4-C/AIPH-4-C_009) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730111973) |
+| [AIPH-4-C/AIPH-4-C_011](./AIPH-4-C/AIPH-4-C_011) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112056) |
+| [AIPH-4-C/AIPH-4-C_013](./AIPH-4-C/AIPH-4-C_013) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112148) |
+| [AIPH-4-C/AIPH-4-C_015](./AIPH-4-C/AIPH-4-C_015) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112226) |
+| [AIPH-4-C/AIPH-4-C_017](./AIPH-4-C/AIPH-4-C_017) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112300) |
+| [AIPH-4-C/AIPH-4-C_019](./AIPH-4-C/AIPH-4-C_019) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112374) |
+| [AIPH-4-C/AIPH-4-C_021](./AIPH-4-C/AIPH-4-C_021) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112437) |
+| [AIPH-4-C/AIPH-4-C_023](./AIPH-4-C/AIPH-4-C_023) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112489) |
+| [AIPH-4-C/AIPH-4-C_025](./AIPH-4-C/AIPH-4-C_025) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112676) |
+| [AIPH-4-C/AIPH-4-C_027](./AIPH-4-C/AIPH-4-C_027) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112753) |
+| [AIPH-4-C/AIPH-4-C_029](./AIPH-4-C/AIPH-4-C_029) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112785) |
+| [AIPH-4-C/AIPH-4-C_031](./AIPH-4-C/AIPH-4-C_031) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112825) |
+| [AIPH-4-C/AIPH-4-C_033](./AIPH-4-C/AIPH-4-C_033) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112872) |
+| [AIPH-4-C/AIPH-4-C_035](./AIPH-4-C/AIPH-4-C_035) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112929) |
+| [AIPH-4-C/AIPH-4-C_037](./AIPH-4-C/AIPH-4-C_037) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730112963) |
+| [AIPH-4-C/AIPH-4-C_039](./AIPH-4-C/AIPH-4-C_039) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113006) |
+| [AIPH-4-C/AIPH-4-C_041](./AIPH-4-C/AIPH-4-C_041) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113055) |
+| [AIPH-4-C/AIPH-4-C_043](./AIPH-4-C/AIPH-4-C_043) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113113) |
+| [AIPH-4-C/AIPH-4-C_045](./AIPH-4-C/AIPH-4-C_045) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113177) |
+| [AIPH-4-C/AIPH-4-C_047](./AIPH-4-C/AIPH-4-C_047) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113202) |
+| [AIPH-4-C/AIPH-4-C_049](./AIPH-4-C/AIPH-4-C_049) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113236) |
+| [AIPH-4-C/AIPH-4-C_051](./AIPH-4-C/AIPH-4-C_051) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113326) |
+| [AIPH-4-C/AIPH-4-C_053](./AIPH-4-C/AIPH-4-C_053) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113403) |
+| [AIPH-4-C/AIPH-4-C_055](./AIPH-4-C/AIPH-4-C_055) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113478) |
+| [AIPH-4-C/AIPH-4-C_057](./AIPH-4-C/AIPH-4-C_057) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113522) |
+| [AIPH-4-C/AIPH-4-C_059](./AIPH-4-C/AIPH-4-C_059) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113597) |
+| [AIPH-4-C/AIPH-4-C_061](./AIPH-4-C/AIPH-4-C_061) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113653) |
+| [AIPH-4-C/AIPH-4-C_063](./AIPH-4-C/AIPH-4-C_063) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113692) |
+| [AIPH-4-C/AIPH-4-C_065](./AIPH-4-C/AIPH-4-C_065) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113726) |
+| [AIPH-4-C/AIPH-4-C_067](./AIPH-4-C/AIPH-4-C_067) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113768) |
+| [AIPH-4-C/AIPH-4-C_069](./AIPH-4-C/AIPH-4-C_069) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113818) |
+| [AIPH-4-C/AIPH-4-C_071](./AIPH-4-C/AIPH-4-C_071) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113907) |
+| [AIPH-4-C/AIPH-4-C_073](./AIPH-4-C/AIPH-4-C_073) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730113962) |
+| [AIPH-4-C/AIPH-4-C_075](./AIPH-4-C/AIPH-4-C_075) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730114032) |
+| [AIPH-4-C/AIPH-4-C_077](./AIPH-4-C/AIPH-4-C_077) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800730114120) |
 | [AIPH-4-D/AIPH-4-D_001](./AIPH-4-D/AIPH-4-D_001) | ❌ | ❌ | ❌ | ❌ |
 | [AIPH-4-D/AIPH-4-D_003](./AIPH-4-D/AIPH-4-D_003) | ❌ | ❌ | ❌ | ❌ |
 | [AIPH-4-D/AIPH-4-D_005](./AIPH-4-D/AIPH-4-D_005) | ❌ | ❌ | ❌ | ❌ |
