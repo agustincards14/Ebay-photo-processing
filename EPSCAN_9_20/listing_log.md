@@ -1,14 +1,14 @@
 # eBay Listing Log (EPSCAN_9_20)
 
-**Last Updated:** 2026-10-02 12:38:33 PM PDT by `run_ebay_workflow.py`
+**Last Updated:** 2026-10-02 12:52:55 PM PDT by `run_ebay_workflow.py`
 
 ### Summary Totals
 - **Total Folders:** 424
 - **Metadata Generated:** 219
 - **Inventory Items Created:** 219
 - **Offers Created:** 219
-- **Listings Published:** 218
-- **Percentage Published:** 51.4%
+- **Listings Published:** 219
+- **Percentage Published:** 51.7%
 
 ## Listing Status Dashboard
 
@@ -227,7 +227,7 @@
 | [AIPH-4-G/AIPH-4-G_039](./AIPH-4-G/AIPH-4-G_039) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800749518309) |
 | [AIPH-4-G/AIPH-4-G_041](./AIPH-4-G/AIPH-4-G_041) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800749519106) |
 | [AIPH-4-G/AIPH-4-G_043](./AIPH-4-G/AIPH-4-G_043) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800749519955) |
-| [AIPH-4-G/AIPH-4-G_045](./AIPH-4-G/AIPH-4-G_045) | ✅ | ✅ | ✅ | ❌ |
+| [AIPH-4-G/AIPH-4-G_045](./AIPH-4-G/AIPH-4-G_045) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800749581110) |
 | [AIPH-4-G/AIPH-4-G_047](./AIPH-4-G/AIPH-4-G_047) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800749521129) |
 | [AIPH-4-G/AIPH-4-G_049](./AIPH-4-G/AIPH-4-G_049) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800749521530) |
 | [AIPH-4-G/AIPH-4-G_051](./AIPH-4-G/AIPH-4-G_051) | ✅ | ✅ | ✅ | [View Listing](https://www.ebay.com/itm/800749521879) |
