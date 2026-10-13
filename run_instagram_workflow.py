@@ -29,6 +29,7 @@ from instagram_client import InstagramClient, InstagramGraphAPIError
 
 DEFAULT_BATCH_SIZE = 5
 PACIFIC_TZ = ZoneInfo("America/Los_Angeles")
+PROJECT_ROOT = Path(__file__).resolve().parent
 LOG_FILE_NAME = "instagram_log.md"
 
 
@@ -108,20 +109,15 @@ def is_already_posted_to_instagram(meta: dict[str, Any]) -> bool:
 
 def update_item_metadata_post_success(
     folder_path: Path,
-    media_id: str,
-    post_url: str,
-    timestamp_str: str
+    post_url: str
 ) -> None:
-    """Updates metadata.json with the live Instagram post URL and publication state."""
+    """Updates metadata.json with the live Instagram post URL."""
     meta_file = folder_path / "metadata.json"
     try:
         with open(meta_file, "r", encoding="utf-8") as f:
             meta = json.load(f)
 
         meta["instagram_url"] = post_url
-        meta["instagram_posted"] = True
-        meta["instagram_carousel_id"] = media_id
-        meta["instagram_posted_at"] = timestamp_str
 
         with open(meta_file, "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=4)
@@ -136,20 +132,28 @@ def append_to_instagram_log(
     permalink: Optional[str],
     caption: str
 ) -> None:
-    """Appends published carousel details to instagram_log.md."""
-    log_file = log_dir / LOG_FILE_NAME
+    """Appends published carousel details to instagram_log.md in the folder and project root."""
     now_pacific = datetime.now(PACIFIC_TZ).strftime("%Y-%m-%d %I:%M:%S %p %Z")
     skus = [p.name for p in batch_folders]
+    link_str = f"[View Post]({permalink})" if permalink else "N/A"
+    row = f"| {now_pacific} | `{media_id}` | `{', '.join(skus)}` | {link_str} |\n"
 
-    header_needed = not log_file.exists()
-    with open(log_file, "a", encoding="utf-8") as f:
-        if header_needed:
-            f.write("# Instagram Publication Log\n\n")
-            f.write("| Timestamp | Post ID | SKUs Included | Permalink |\n")
-            f.write("| :--- | :--- | :--- | :--- |\n")
+    target_dirs = [log_dir]
+    if PROJECT_ROOT != log_dir and PROJECT_ROOT not in target_dirs:
+        target_dirs.append(PROJECT_ROOT)
 
-        link_str = f"[View Post]({permalink})" if permalink else "N/A"
-        f.write(f"| {now_pacific} | `{media_id}` | `{', '.join(skus)}` | {link_str} |\n")
+    for d in target_dirs:
+        log_file = d / LOG_FILE_NAME
+        header_needed = not log_file.exists()
+        try:
+            with open(log_file, "a", encoding="utf-8") as f:
+                if header_needed:
+                    f.write("# Instagram Publication Log\n\n")
+                    f.write("| Timestamp | Post ID | SKUs Included | Permalink |\n")
+                    f.write("| :--- | :--- | :--- | :--- |\n")
+                f.write(row)
+        except Exception as e:
+            print(f"[!] Warning: Could not write to {log_file}: {e}", file=sys.stderr)
 
 
 def process_batch(
@@ -218,9 +222,9 @@ def process_batch(
 
         # 4. Atomically update metadata.json for all items in batch with post URL
         for f in batch_folders:
-            update_item_metadata_post_success(f, media_id, post_url, now_pacific)
+            update_item_metadata_post_success(f, post_url)
 
-        # 5. Log to instagram_log.md in the batch parent directory
+        # 5. Log to instagram_log.md with current timestamp
         log_dir = batch_folders[0].parent
         append_to_instagram_log(log_dir, batch_folders, media_id, post_url, caption)
 

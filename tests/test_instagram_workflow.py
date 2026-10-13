@@ -160,17 +160,16 @@ class TestURLValidationAndExitCode(unittest.TestCase):
         test_url = "https://www.instagram.com/p/C-TestPost123/"
         update_item_metadata_post_success(
             folder_path=item_dir,
-            media_id="17899999999",
-            post_url=test_url,
-            timestamp_str="2026-10-08T12:00:00"
+            post_url=test_url
         )
 
         with open(meta_path, "r") as f:
             updated = json.load(f)
 
         self.assertEqual(updated.get("instagram_url"), test_url)
-        self.assertTrue(updated.get("instagram_posted"))
-        self.assertEqual(updated.get("instagram_carousel_id"), "17899999999")
+        self.assertNotIn("instagram_posted", updated)
+        self.assertNotIn("instagram_carousel_id", updated)
+        self.assertNotIn("instagram_posted_at", updated)
 
 
 
