@@ -4,7 +4,7 @@ This script consolidates all post-metadata tasks for scanned photograph folders:
 1. Uploads front and back JPEG images to eBay Media API (getting real HTTPS image URLs).
 2. Generates local inventory_item.json with rich eBay aspects and static defaults.
 3. Sends PUT /sell/inventory/v1/inventory_item/{sku} to eBay API.
-4. Generates local offer.json using metadata price and eBay business policies.
+4. Generates local offer.json with $24.99 photo price and eBay business policies.
 5. Sends POST /sell/inventory/v1/offer to eBay API (retrieving offerId).
 6. Sends POST /sell/inventory/v1/offer/{offerId}/publish to make the listing live.
 7. Updates metadata.json state flags after each successful step for atomic resume capability.
@@ -241,16 +241,12 @@ def fetch_business_policies(access_token: str, api_host: str, store: str) -> dic
 
     return policies
 
+DEFAULT_OFFER_PRICE = "24.99"
+
 def build_offer_payload(folder_path: Path, meta: dict, business_policies: dict[str, Any]) -> dict:
     """Builds the offer payload using metadata and store-specific business policies."""
     sku = meta.get("sku", folder_path.name)
-    price_str = str(meta.get("price", "10")).replace('$', '').replace(',', '').strip()
-    try:
-        price_num = float(price_str)
-        price_val = f"{price_num:.2f}"
-    except ValueError:
-        price_num = 10.00
-        price_val = "10.00"
+    price_val = DEFAULT_OFFER_PRICE
 
     offer_data = {
         "sku": sku,

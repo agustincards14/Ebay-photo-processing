@@ -177,8 +177,9 @@ EPSCAN_TEST/
 *EPSCAN*/**/*.jpeg
 *EPSCAN*/**/*.JPEG
 
-# eBay credentials
+# credentials
 ebay_credentials.json
+instagram_credentials.json
 
 # Generated eBay payload files
 inventory_item.json
@@ -188,4 +189,3 @@ offer.json
 
 # Scratch directory
 scratch/
-test/

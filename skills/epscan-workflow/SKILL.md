@@ -52,13 +52,13 @@ This skill teaches agents how to sequentially process raw scanned vintage photog
 
 ### Step 4: Validate and Test Connection
 * Make sure `inventory_item.json` is created in each subdirectory and conforms to the schema in the OpenAPI specification `sell_inventory_v1_oas3.json`.
-* Run test calls using `test_ebay_api.py` to confirm everything works properly.
+* Run test calls using `tests/test_ebay_api.py` to confirm everything works properly.
 
 ---
 
 ## 🛠️ Tools & Scripts
 
-This skill utilizes the following scripts in the project root:
+This skill utilizes the following scripts in the project:
 * [process_photos.py](file:///Users/agustinbjr/Ebay/process_photos.py): Manages folder grouping and Gemini API metadata generation.
 * [convert_metadata.py](file:///Users/agustinbjr/Ebay/convert_metadata.py): Transforms metadata to eBay format.
-* [test_ebay_api.py](file:///Users/agustinbjr/Ebay/test_ebay_api.py): Tests the generated details against eBay APIs.
+* [test_ebay_api.py](file:///Users/agustinbjr/Ebay/tests/test_ebay_api.py): Tests the generated details against eBay APIs.

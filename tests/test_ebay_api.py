@@ -1,7 +1,15 @@
 import os
+import sys
 import json
+from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
+
+# Add project root to sys.path so project modules can be loaded from tests/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from ebay_oauth_helper import check_and_get_token, ENVIRONMENTS
 
 def test_api():

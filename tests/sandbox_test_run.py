@@ -6,7 +6,7 @@ from urllib.error import HTTPError
 from pathlib import Path
 
 # Add project root to path to load authentication helpers
-PROJECT_ROOT = Path(__file__).parent.resolve()
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.append(str(PROJECT_ROOT))
 from ebay_oauth_helper import check_and_get_token, ENVIRONMENTS
 

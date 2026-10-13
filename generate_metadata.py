@@ -61,7 +61,7 @@ EBAY_THEMES = [
 def build_ebay_safe_sku(folder_name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_\-]", "", folder_name)[:50]
 
-DEFAULT_PRICE = "$19.95"
+DEFAULT_PRICE = "$24.99"
 
 class PhotoMetadata(BaseModel):
     title: str = Field(
