@@ -28,63 +28,94 @@ from run_instagram_workflow import (
 
 class TestInstagramCaptionGenerator(unittest.TestCase):
     def setUp(self):
-        self.mock_items = [
-            {
-                "sku": f"AIPH-TEST_000{i}",
-                "title": f"Vintage Snapshot #{i} of City Street",
-                "year": str(1950 + i * 5),
-                "location": "Chicago, Illinois",
-                "description": f"Detailed historical description for photograph #{i}. A group of people walking.",
-                "subjects": ["Street", "People", "City"],
-                "themes": ["Urban Life", "Americana"],
-                "image_color": "Black & White",
-            }
-            for i in range(1, 6)
-        ]
+        self.items = [dict(title=f"Original Photo {i}", description="A longer description.",
+                           year="circa 1940", themes=["Family", "Leisure"], subjects=["Children", "Garden"])
+                      for i in range(1, 8)]
+        self.copy = {"photos": [dict(photo_number=i, title=f"Family scene {i}",
+                                    summary="Children gather in a garden.") for i in range(1, 8)]}
+        self.client_patch = patch("instagram_caption_generator.genai.Client")
+        self.client_factory = self.client_patch.start()
+        self.addCleanup(self.client_patch.stop)
+        self.generate = self.client_factory.return_value.__enter__.return_value.models.generate_content
+        self.generate.return_value = MagicMock(text=json.dumps(self.copy))
+        self.env_patch = patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"})
+        self.env_patch.start()
+        self.addCleanup(self.env_patch.stop)
 
-    def test_caption_contains_all_sequential_slides(self):
-        caption = build_carousel_caption(self.mock_items)
-        self.assertIn("[1/5] 1955: Vintage Snapshot #1 of City Street", caption)
-        self.assertIn("[2/5] 1960: Vintage Snapshot #2 of City Street", caption)
-        self.assertIn("[3/5] 1965: Vintage Snapshot #3 of City Street", caption)
-        self.assertIn("[4/5] 1970: Vintage Snapshot #4 of City Street", caption)
-        self.assertIn("[5/5] 1975: Vintage Snapshot #5 of City Street", caption)
-        self.assertTrue(caption.startswith("[1/5]"))
-        self.assertIn("🏷️", caption)
+    def test_ai_titles_and_summaries_with_all_seven_photos(self):
+        caption = build_carousel_caption(self.items)
+        for i in range(1, 8):
+            self.assertIn(f"[{i}/7] Family scene {i} — Children gather in a garden.", caption)
+        self.assertLessEqual(len(caption), 800)
+        self.assertEqual(len(caption.split("🏷️ ")[1].split()), 5)
+        config = self.generate.call_args.kwargs["config"]
+        self.assertEqual(config.response_mime_type, "application/json")
+        self.assertIsNotNone(config.response_schema)
 
-    def test_caption_length_enforces_limit_with_huge_descriptions(self):
-        huge_items = [
-            {
-                "title": f"Very Long Vintage Title Number {i}",
-                "year": "1960",
-                "location": "New York",
-                "description": "A very long repetitive description. " * 80,
-                "subjects": [f"Subject_{i}_{j}" for j in range(10)],
-                "themes": ["History", "Architecture"],
-            }
-            for i in range(1, 6)
-        ]
-        caption = build_carousel_caption(huge_items)
-        self.assertLessEqual(len(caption), MAX_INSTAGRAM_CAPTION_LENGTH)
-        self.assertIn("[1/5]", caption)
-        self.assertIn("[5/5]", caption)
+    def test_rewrites_oversized_copy_without_truncating(self):
+        oversized = {"photos": [dict(photo, summary="Long description " * 80) for photo in self.copy["photos"]]}
+        self.generate.side_effect = [MagicMock(text=json.dumps(oversized)), MagicMock(text=json.dumps(self.copy))]
+        caption = build_carousel_caption(self.items)
+        self.assertEqual(self.generate.call_count, 2)
+        self.assertLessEqual(len(caption), 800)
+        self.assertNotIn("…", caption)
+        self.assertIn("failed validation", self.generate.call_args.kwargs["contents"])
+
+    def test_missing_or_reordered_photos_are_rejected(self):
+        self.generate.return_value.text = json.dumps({"photos": list(reversed(self.copy["photos"]))})
+        with self.assertRaisesRegex(ValueError, "three attempts"):
+            build_carousel_caption(self.items)
+        self.assertEqual(self.generate.call_count, 3)
+
+    def test_invalid_json_never_cached(self):
+        self.generate.return_value.text = "not JSON"
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError):
+                build_carousel_caption(self.items, cache_dir=Path(directory))
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
+    def test_cache_reused_without_api_key_and_invalidated_on_source_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache_dir = Path(directory)
+            original = build_carousel_caption(self.items, cache_dir=cache_dir)
+            with patch.dict(os.environ, {}, clear=True):
+                self.assertEqual(build_carousel_caption(self.items, cache_dir=cache_dir), original)
+            self.assertEqual(self.generate.call_count, 1)
+            self.items[0]["description"] = "New source description."
+            build_carousel_caption(self.items, cache_dir=cache_dir)
+            self.assertEqual(self.generate.call_count, 2)
+            build_carousel_caption(self.items, cache_dir=cache_dir, item_ids=[str(i) for i in range(7)])
+            self.assertEqual(self.generate.call_count, 3)
+
+    def test_tampered_cache_is_regenerated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache_dir = Path(directory)
+            original = build_carousel_caption(self.items, cache_dir=cache_dir)
+            cache_file = next(cache_dir.glob("*.json"))
+            cached = json.loads(cache_file.read_text())
+            cached["caption"] = "Unexpected caption"
+            cache_file.write_text(json.dumps(cached))
+            self.assertEqual(build_carousel_caption(self.items, cache_dir=cache_dir), original)
+            self.assertEqual(self.generate.call_count, 2)
+
+    def test_missing_api_key_fails_before_request(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(ValueError, "GEMINI_API_KEY"):
+                build_carousel_caption(self.items)
+        self.generate.assert_not_called()
+
+    def test_hashtag_category_mix(self):
+        from instagram_caption_generator import select_exact_hashtags
+        tags = select_exact_hashtags(self.items, seed=42)
+        self.assertEqual(tags[0], "#VintagePhotos")
+        self.assertEqual(set(tags[1:3]), {"#Family", "#Leisure"})
+        self.assertEqual(set(tags[3:]), {"#Children", "#Garden"})
+        self.assertEqual(len(set(tag.lower() for tag in tags)), 5)
 
     def test_clean_hashtag(self):
         self.assertEqual(clean_hashtag("Black & White"), "#BlackWhite")
         self.assertEqual(clean_hashtag("1950s Car!"), "#1950sCar")
         self.assertEqual(clean_hashtag("   "), "")
-
-    def test_select_exact_six_hashtags(self):
-        from instagram_caption_generator import select_exact_hashtags, DEFAULT_BASE_HASHTAGS
-        tags = select_exact_hashtags(self.mock_items, seed=42)
-        self.assertEqual(len(tags), 6)
-        # Exactly 2 from base community tags
-        base_matches = [t for t in tags if t in DEFAULT_BASE_HASHTAGS]
-        self.assertEqual(len(base_matches), 2)
-        # All tags properly formatted
-        self.assertTrue(all(t.startswith("#") for t in tags))
-        # Unique tags
-        self.assertEqual(len(set(tags)), 6)
 
 
 class TestURLValidationAndExitCode(unittest.TestCase):
@@ -122,9 +153,9 @@ class TestURLValidationAndExitCode(unittest.TestCase):
         self.assertIsNone(get_front_image_url(item_dir))
 
     def test_process_batch_exits_when_image_url_missing(self):
-        # Create 5 item folders where 1 is missing inventory_item.json
+        # Create 7 item folders where 1 is missing inventory_item.json
         batch_folders = []
-        for i in range(1, 6):
+        for i in range(1, 8):
             folder = self.test_dir / f"folder_{i}"
             folder.mkdir()
             with open(folder / "metadata.json", "w") as f:
@@ -173,13 +204,77 @@ class TestURLValidationAndExitCode(unittest.TestCase):
 
 
 
+class TestInstagramBatchSelection(unittest.TestCase):
+    def test_preferred_and_fallback_batches_after_posted_filter(self):
+        from run_instagram_workflow import main
+        for available, expected in ((9, 7), (7, 7), (6, 6), (5, 5), (4, None), (1, None)):
+            with self.subTest(available=available), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                # Already-posted photos must not count toward the batch size.
+                for idx in range(available + 3):
+                    folder = root / f"photo_{idx:02}"
+                    folder.mkdir()
+                    meta = {"title": "Test Photo"}
+                    if idx < 3:
+                        meta["instagram_url"] = "https://www.instagram.com/p/already/"
+                    (folder / "metadata.json").write_text(json.dumps(meta))
+                with patch.object(sys, "argv", ["run_instagram_workflow.py", directory, "--dry-run"]), \
+                     patch("run_instagram_workflow.process_batch", return_value=True) as process, \
+                     patch("builtins.print"):
+                    if expected is None:
+                        with self.assertRaises(SystemExit) as exc:
+                            main()
+                        self.assertEqual(exc.exception.code, 1)
+                        process.assert_not_called()
+                    else:
+                        main()
+                        selected = process.call_args.kwargs["batch_folders"]
+                        self.assertEqual(len(selected), expected)
+                        self.assertEqual(selected[0].name, "photo_03")
+                        process.assert_called_once()
+                        self.assertTrue(process.call_args.kwargs["dry_run"])
+
+
+class TestInstagramLogLocation(unittest.TestCase):
+    def test_logs_only_beside_epscan_listing_logs(self):
+        from run_instagram_workflow import append_to_instagram_log
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            folders = []
+            for name in ("EPSCAN_ONE", "EPSCAN_TWO"):
+                root = project / name
+                item = root / "group" / "photo"
+                item.mkdir(parents=True)
+                (root / "listing_log.md").write_text("Listing log")
+                folders.append(item)
+            with patch("run_instagram_workflow.PROJECT_ROOT", project):
+                append_to_instagram_log(folders[0].parent, folders, "post123", "https://example.com/post", "caption")
+            for folder in folders:
+                self.assertIn("post123", (folder.parents[1] / "instagram_log.md").read_text())
+                self.assertFalse((folder.parent / "instagram_log.md").exists())
+            self.assertFalse((project / "instagram_log.md").exists())
+
+    def test_refuses_directories_without_epscan_listing_log(self):
+        from run_instagram_workflow import find_instagram_log_dir
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "listing_log.md").write_text("Listing log")
+            with self.assertRaises(ValueError):
+                find_instagram_log_dir(root)
+            epscan = root / "EPSCAN_EMPTY"
+            epscan.mkdir()
+            with self.assertRaises(ValueError):
+                find_instagram_log_dir(epscan)
+
+
 class TestInstagramClientMock(unittest.TestCase):
     def setUp(self):
         self.client = InstagramClient(access_token="test_token", instagram_account_id="123456789")
 
+    @patch("time.sleep")
     @patch("requests.post")
     @patch("requests.get")
-    def test_post_carousel_flow(self, mock_get, mock_post):
+    def test_post_carousel_flow(self, mock_get, mock_post, mock_sleep):
         # 1. Mock child container creations
         post_resp_child = MagicMock()
         post_resp_child.status_code = 200
@@ -196,6 +291,8 @@ class TestInstagramClientMock(unittest.TestCase):
         post_resp_publish.json.return_value = {"id": "media_live_303"}
 
         mock_post.side_effect = [
+            post_resp_child,
+            post_resp_child,
             post_resp_child,
             post_resp_child,
             post_resp_child,
@@ -220,15 +317,63 @@ class TestInstagramClientMock(unittest.TestCase):
             get_status_finished,
             get_status_finished,
             get_status_finished,
+            get_status_finished,
+            get_status_finished,
             get_status_finished,  # For carousel container
             get_permalink,
         ]
 
-        image_urls = [f"https://i.ebayimg.com/photo_{i}.jpg" for i in range(1, 6)]
+        image_urls = [f"https://i.ebayimg.com/photo_{i}.jpg" for i in range(1, 8)]
         result = self.client.post_carousel(image_urls=image_urls, caption="Test caption")
 
         self.assertEqual(result["media_id"], "media_live_303")
         self.assertEqual(result["permalink"], "https://www.instagram.com/p/ABC123xyz/")
+
+    @patch("time.sleep")
+    @patch("requests.post")
+    def test_create_item_container_retries_transient_media_error(self, mock_post, mock_sleep):
+        # First attempt: Meta fails to download media with error 9004 / 2207052
+        resp_fail = MagicMock()
+        resp_fail.status_code = 400
+        resp_fail.json.return_value = {
+            "error": {
+                "message": "Only photo or video can be accepted as media type.",
+                "code": 9004,
+                "error_subcode": 2207052,
+                "error_user_msg": "The media could not be fetched from this URI: https://i.ebayimg.com/pic.jpg"
+            }
+        }
+        # Second attempt: Succeeded
+        resp_ok = MagicMock()
+        resp_ok.status_code = 200
+        resp_ok.json.return_value = {"id": "container_success_999"}
+
+        mock_post.side_effect = [resp_fail, resp_ok]
+
+        cid = self.client.create_item_container("https://i.ebayimg.com/pic.jpg", max_retries=3, base_delay=1.0)
+        self.assertEqual(cid, "container_success_999")
+        self.assertEqual(mock_post.call_count, 2)
+        mock_sleep.assert_called_once_with(1.0)
+
+    @patch("requests.post")
+    def test_create_item_container_daily_limit_does_not_retry(self, mock_post):
+        # Daily limit subcode 2207042 should fail immediately
+        resp_limit = MagicMock()
+        resp_limit.status_code = 400
+        resp_limit.json.return_value = {
+            "error": {
+                "message": "You reached maximum number of posts that is allowed to be published",
+                "code": 9,
+                "error_subcode": 2207042
+            }
+        }
+        mock_post.return_value = resp_limit
+
+        with self.assertRaises(InstagramGraphAPIError) as cm:
+            self.client.create_item_container("https://i.ebayimg.com/pic.jpg", max_retries=3)
+
+        self.assertIn("Daily Instagram publishing limit reached", str(cm.exception))
+        self.assertEqual(mock_post.call_count, 1)
 
 
 if __name__ == "__main__":

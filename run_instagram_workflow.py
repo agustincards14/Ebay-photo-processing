@@ -1,6 +1,6 @@
 """Master execution script for EPSCAN Instagram Carousel Publishing Workflow.
 
-Groups scanned photograph items into 5-photo carousels (front photos only) and publishes
+Groups scanned photograph items into carousels of preferably 7 photos (minimum 5) and publishes
 them to Instagram via the official Meta Instagram Graph API.
 
 Strict URL Validation:
@@ -10,7 +10,7 @@ Strict URL Validation:
 Usage:
   python run_instagram_workflow.py /path/to/EPSCAN/AIPH-4-L               # Process all unposted items in directory
   python run_instagram_workflow.py /path/to/EPSCAN/AIPH-4-L --dry-run    # Preview batch and caption without publishing
-  python run_instagram_workflow.py folder1 folder2 folder3 folder4 folder5 # Process explicit list of 5 folders
+  python run_instagram_workflow.py folder1 folder2 folder3 folder4 folder5 folder6 folder7 # Process explicit list of 7 folders
 """
 
 import os
@@ -24,10 +24,10 @@ from zoneinfo import ZoneInfo
 from typing import Any, Optional
 
 from instagram_oauth_helper import load_credentials, verify_credentials
-from instagram_caption_generator import build_carousel_caption
+from instagram_caption_generator import build_carousel_caption, MAX_INSTAGRAM_CAPTION_LENGTH
 from instagram_client import InstagramClient, InstagramGraphAPIError
 
-DEFAULT_BATCH_SIZE = 5
+DEFAULT_BATCH_SIZE = 7
 PACIFIC_TZ = ZoneInfo("America/Los_Angeles")
 PROJECT_ROOT = Path(__file__).resolve().parent
 LOG_FILE_NAME = "instagram_log.md"
@@ -125,6 +125,15 @@ def update_item_metadata_post_success(
         print(f"[!] Warning: Failed to update metadata.json in {folder_path}: {e}", file=sys.stderr)
 
 
+def find_instagram_log_dir(path: Path) -> Path:
+    """Locate the EPSCAN ancestor that holds the listing log."""
+    path = path.resolve()
+    for directory in (path, *path.parents):
+        if "EPSCAN" in directory.name.upper() and (directory / "listing_log.md").is_file():
+            return directory
+    raise ValueError(f"No EPSCAN directory containing listing_log.md found above {path}")
+
+
 def append_to_instagram_log(
     log_dir: Path,
     batch_folders: list[Path],
@@ -132,28 +141,28 @@ def append_to_instagram_log(
     permalink: Optional[str],
     caption: str
 ) -> None:
-    """Appends published carousel details to instagram_log.md in the folder and project root."""
+    """Append each batch's records only beside its EPSCAN listing log."""
     now_pacific = datetime.now(PACIFIC_TZ).strftime("%Y-%m-%d %I:%M:%S %p %Z")
-    skus = [p.name for p in batch_folders]
     link_str = f"[View Post]({permalink})" if permalink else "N/A"
-    row = f"| {now_pacific} | `{media_id}` | `{', '.join(skus)}` | {link_str} |\n"
-
-    target_dirs = [log_dir]
-    if PROJECT_ROOT != log_dir and PROJECT_ROOT not in target_dirs:
-        target_dirs.append(PROJECT_ROOT)
-
-    for d in target_dirs:
-        log_file = d / LOG_FILE_NAME
-        header_needed = not log_file.exists()
-        try:
+    try:
+        grouped: dict[Path, list[str]] = {}
+        for folder in batch_folders:
+            directory = find_instagram_log_dir(folder)
+            grouped.setdefault(directory, []).append(folder.name)
+        if not grouped:
+            grouped[find_instagram_log_dir(log_dir)] = []
+        for directory, skus in grouped.items():
+            log_file = directory / LOG_FILE_NAME
+            header_needed = not log_file.exists()
+            row = f"| {now_pacific} | `{media_id}` | `{', '.join(skus)}` | {link_str} |\n"
             with open(log_file, "a", encoding="utf-8") as f:
                 if header_needed:
                     f.write("# Instagram Publication Log\n\n")
                     f.write("| Timestamp | Post ID | SKUs Included | Permalink |\n")
                     f.write("| :--- | :--- | :--- | :--- |\n")
                 f.write(row)
-        except Exception as e:
-            print(f"[!] Warning: Could not write to {log_file}: {e}", file=sys.stderr)
+    except (OSError, ValueError) as exc:
+        print(f"[!] Warning: Could not write Instagram log: {exc}", file=sys.stderr)
 
 
 def process_batch(
@@ -194,9 +203,17 @@ def process_batch(
         items_meta.append(meta)
 
     # 2. Build Multi-Item Sequential Caption
-    caption = build_carousel_caption(items_meta)
+    try:
+        caption = build_carousel_caption(
+            items_meta,
+            cache_dir=PROJECT_ROOT / ".cache" / "instagram_captions",
+            item_ids=[str(folder.resolve()) for folder in batch_folders],
+        )
+    except Exception as exc:
+        print(f"[-] Cannot build caption: {exc}", file=sys.stderr)
+        return False
 
-    print(f"\n[+] Generated Caption ({len(caption)} / 2200 chars):\n")
+    print(f"\n[+] Generated Caption ({len(caption)} / {MAX_INSTAGRAM_CAPTION_LENGTH} chars):\n")
     print("--------------------------------------------------------")
     print(caption)
     print("--------------------------------------------------------\n")
@@ -240,7 +257,7 @@ def process_batch(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Publish 5-photo carousels of vintage photographs to Instagram via Meta Graph API."
+        description="Publish vintage photo carousels: prefer 7 photos, allowing 6 or 5 remaining photos."
     )
     parser.add_argument(
         "targets",
@@ -251,7 +268,7 @@ def main():
         "--batch-size",
         type=int,
         default=DEFAULT_BATCH_SIZE,
-        help=f"Number of front photos per carousel post (default: {DEFAULT_BATCH_SIZE})."
+        help=f"Number of front photos per carousel post (default: {DEFAULT_BATCH_SIZE}, falling back to 6 or 5 if fewer remain)."
     )
     parser.add_argument(
         "--account",
@@ -322,19 +339,21 @@ def main():
         print("[+] All discovered items have already been posted to Instagram. Nothing to do.")
         return
 
-    # Check batch sufficiency
+    # Prefer seven eligible photos; allow a final batch of six or five.
     batch_size = args.batch_size
-    if len(unposted_folders) < batch_size and len(args.targets) > 1:
-        # If user explicitly passed fewer folders than batch size, accept it
-        batch_size = len(unposted_folders)
-    elif len(unposted_folders) < batch_size:
+    available = len(unposted_folders)
+    if batch_size == DEFAULT_BATCH_SIZE and 5 <= available < DEFAULT_BATCH_SIZE:
+        batch_size = available
+        print(f"[*] Only {available} unposted photos remain; using a {batch_size}-photo carousel.")
+    elif available < batch_size:
+        minimum = 5 if batch_size == DEFAULT_BATCH_SIZE else batch_size
         print(
-            f"[-] Notice: Found {len(unposted_folders)} unposted item(s), which is fewer than "
-            f"the required batch size of {batch_size}. Carousels require {batch_size} photos."
+            f"[-] Notice: Found {available} unposted item(s), which is fewer than "
+            f"the required minimum of {minimum} photos."
         )
         sys.exit(1)
 
-    # Pick strictly the first available 5 photos
+    # Pick only the first eligible batch for this run.
     selected_batch = unposted_folders[:batch_size]
     remaining_unposted = len(unposted_folders) - batch_size
     if remaining_unposted > 0:
@@ -368,7 +387,7 @@ def main():
 
         client = InstagramClient(access_token=token, instagram_account_id=account_id)
 
-    # Process and publish the single 5-photo batch
+    # Process and publish the single selected batch
     success = process_batch(
         batch_folders=selected_batch,
         client=client,
