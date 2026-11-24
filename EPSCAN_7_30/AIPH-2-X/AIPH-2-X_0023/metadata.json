@@ -28,5 +28,7 @@
     "ebay_offer_created": true,
     "ebay_offer_id": "238578185011",
     "ebay_offer_published": true,
-    "ebay_listing_url": "https://www.ebay.com/itm/800524729038"
+    "ebay_listing_url": "https://www.ebay.com/itm/800524729038",
+    "ebay_sold": true,
+    "ebay_listing_status": "SOLD"
 }

@@ -29,6 +29,15 @@ from typing import Any, Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from ebay_oauth_helper import check_and_get_token, ENVIRONMENTS
+from optimize_ebay_listings import (
+    ANTIQUE_CUTOFF_YEAR,
+    VINTAGE_CUTOFF_YEAR,
+    build_condition_description,
+    build_html_description,
+    extract_year_int,
+    fix_title_photo_keyword,
+    map_time_period_manufactured,
+)
 
 DEFAULT_BUSINESS_POLICIES: dict[str, Any] = {
     "fulfillmentPolicyId": "251347744026",
@@ -104,32 +113,31 @@ def build_inventory_item_payload(folder_path: Path, meta: dict, image_urls: list
     if match:
         width = float(match.group(1))
         height = float(match.group(2))
-        if width > height:
-            orientation = "Landscape"
-        elif width == height:
-            orientation = "Square"
-        else:
-            orientation = "Portrait"
-
-    # Build description combining main description and back transcription if available
-    desc = meta.get("description", "")
-    back_ocr = meta.get("back_text_transcription")
-    if back_ocr:
-        desc += f" Back of Photo Note:\"{back_ocr}\""
+        orientation = "Landscape" if width > height else "Portrait"
 
     subjects = meta.get("subjects") or meta.get("subject") or []
     if not isinstance(subjects, list):
         subjects = [subjects]
 
-    # Build aspects
-    aspects = {
+    year_raw = meta.get("year", "Unknown")
+    year_int = extract_year_int(year_raw)
+    year_val = str(year_int) if year_int is not None else str(year_raw)
+    tpm = map_time_period_manufactured(year_int)
+    is_antique = "Yes" if (year_int is not None and year_int <= ANTIQUE_CUTOFF_YEAR) else "No"
+    is_vintage = "Yes" if (year_int is None or year_int <= VINTAGE_CUTOFF_YEAR) else "No"
+
+    photo_type = str(meta.get("photo_type") or "").strip()
+    fmt_val = photo_type if (photo_type and photo_type.lower() != "photograph") else "Snapshot"
+
+    # Build aspects aligned with Category 262421 Taxonomy
+    aspects: dict[str, list[str]] = {
         "Subject": subjects,
-        "Year of Production": [meta.get("year", "Unknown")],
-        "Year": [meta.get("year", "Unknown")],
+        "Year of Production": [year_val],
+        "Format": [fmt_val],
         "Unit of Sale": ["Single Piece"],
         "Size": [size_str],
-        "Vintage": ["Yes"],
-        "Antique": ["No"],
+        "Vintage": [is_vintage],
+        "Antique": [is_antique],
         "Signed": ["No"],
         "Material": ["Paper"],
         "Production Technique": ["Gelatin-Silver Print"],
@@ -146,8 +154,8 @@ def build_inventory_item_payload(folder_path: Path, meta: dict, image_urls: list
         "Listed By": ["Dealer or Reseller"],
     }
 
-    if "decade" in meta and meta["decade"]:
-        aspects["Decade"] = [meta["decade"]]
+    if tpm:
+        aspects["Time Period Manufactured"] = [tpm]
 
     if "location" in meta and meta["location"]:
         aspects["Location"] = [meta["location"]]
@@ -156,10 +164,9 @@ def build_inventory_item_payload(folder_path: Path, meta: dict, image_urls: list
     if themes:
         aspects["Theme"] = themes if isinstance(themes, list) else [themes]
 
-    raw_title = meta.get("title", "").strip()
-    if raw_title and "photo" not in raw_title.lower():
-        raw_title = f"{raw_title} Photo"
-    title_val = raw_title[:80]
+    title_val = fix_title_photo_keyword(meta.get("title", ""))
+    desc = build_html_description({**meta, "title": title_val}, aspects)
+    cond_desc = build_condition_description(meta, aspects)
 
     inventory_item = {
         "product": {
@@ -170,7 +177,7 @@ def build_inventory_item_payload(folder_path: Path, meta: dict, image_urls: list
         },
         "availability": {"shipToLocationAvailability": {"quantity": 1}},
         "condition": "USED_EXCELLENT",
-        "conditionDescription": f"Vintage photograph. Year: {meta.get('year', 'Unknown')}. Size: {size_str}.",
+        "conditionDescription": cond_desc,
         "packageWeightAndSize": {
             "dimensions": {
                 "length": 7.0,

@@ -66,15 +66,14 @@ DEFAULT_PRICE = "$24.99"
 class PhotoMetadata(BaseModel):
     title: str = Field(
         description=(
-            "Descriptive title of the photo strictly under 80 characters. "
-            "Must always include the word 'Photo' (e.g., '... Snapshot Photo' or '... Vintage Photo'). "
-            "Incorporate rich subject-descriptive adjectives (e.g., age, size, gender, color, style/attire, mood, relationship) "
-            "and environment/setting details (e.g., climate, color, structure, ambience). "
-            "Prioritize the main subject with rich adjectives, then append key context (year/decade, location, format). "
-            "Example: 'Smiling Young Couple on Sunny Beach, 1952 Florida B&W Snapshot Photo'. Strictly under 80 characters."
+            "SEO-optimized descriptive title strictly under 80 characters (target 68-80 chars). "
+            "Use clean readable grammar: '<Main Subject / Name / Location>, <Visual / Setting Details> - <Vintage/Antique> <Decade> <B&W/Sepia/Color> Snapshot Photo'. "
+            "Use 'Antique' if 1926 or earlier, otherwise 'Vintage'. Use 'B&W' instead of 'Black & White'. "
+            "Do NOT force the word 'Original'. Must always include the word 'Photo'. "
+            "Example: 'Smiling Couple, Sunny Florida Beach - Vintage 1950s B&W Snapshot Photo'. Strictly under 80 characters."
         )
     )
-    year: str = Field(description="Exact year the photo was taken (estimated if unknown).")
+    year: str = Field(description="Clean 4-digit year the photo was taken (e.g. '1958', estimated if unknown, without 'circa' or 'c.').")
     subjects: list[str] = Field(description="Subjects describing the photo.")
     themes: list[str] = Field(description="List of 1 to 3 relevant themes selected from the allowed list, ordered by relevance.")
     location: str = Field(description="Location where the photo was taken (estimated or general location/city).")
@@ -155,7 +154,10 @@ def process_single_folder(subfolder_path: Path, force: bool = False) -> bool:
         "Analyze these two sides of a scanned photograph (front and back). "
         "Please extract and synthesize metadata about this photo. "
         "Things like the year, decade, a list of subjects, estimated location, image_color, photo_type, etc."
-        "Provide a title strictly under 80 characters including key search terms (decade, subject, photo type, color, location). The title MUST always include the word 'Photo' (e.g. ending with 'Snapshot Photo' or 'Vintage Photo'). Make sure to prioritize the subject of the photo, then append attributes and keywords after a comma. "
+        "Provide a clean 4-digit year in 'year' (e.g. '1958', no 'circa' prefix). "
+        "Provide an SEO-optimized title strictly under 80 characters (target 68-80 chars) using clean readable grammar: "
+        "'<Main Subject / Location>, <Details> - <Vintage/Antique> <Decade> <B&W/Sepia/Color> Snapshot Photo'. "
+        "Use 'Antique' if <=1926 else 'Vintage'. Use 'B&W' instead of 'Black & White'. Do NOT force 'Original'. The title MUST always include 'Photo'. "
         "a verbatim transcription of any handwritten notes, stamps, or text on the back in 'back_text_transcription' (or empty string if none), "
         "a detailed description including the setting, any cultural or political anchors of that time, "
         "Also select 1 to 3 relevant themes from the allowed list: " + ", ".join(EBAY_THEMES) + ". "
